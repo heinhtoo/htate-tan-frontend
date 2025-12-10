@@ -1,0 +1,14 @@
+export enum BookingStatus {
+  CUSTOMER_WAITING = "CUSTOMER_WAITING",
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  CANCELLED = "CANCELLED",
+  TIME_OUT = "TIME_OUT",
+}
+
+export enum PaymentStatus {
+  PROCESSING = "PROCESSING",
+  SUCCESS = "SUCCESS",
+  FAILED = "FAILED",
+  EXPIRED = "EXPIRED",
+}
