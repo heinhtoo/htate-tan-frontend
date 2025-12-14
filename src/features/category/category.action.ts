@@ -4,7 +4,7 @@ import { addExtraData } from "@/lib/axiosHelper";
 import type { APIResponse } from "@/types/response";
 import { z } from "zod";
 import type { CategoryResponse } from "./category.response";
-import type { categorySchema } from "./category.schema";
+import type { categorieschema } from "./category.schema";
 
 async function getCategoriesFn({
   page = "1",
@@ -39,7 +39,7 @@ async function getCategoriesFn({
 async function createCategoryFn({
   data,
 }: {
-  data: z.infer<typeof categorySchema>;
+  data: z.infer<typeof categorieschema>;
 }) {
   const response = await axiosClientInstance.post<
     APIResponse<CategoryResponse>
@@ -65,7 +65,7 @@ async function updateCategoryFn({
   version,
 }: {
   id: number;
-  data: z.infer<typeof categorySchema>;
+  data: z.infer<typeof categorieschema>;
   version: number;
 }) {
   const response = await axiosClientInstance.put<APIResponse<CategoryResponse>>(

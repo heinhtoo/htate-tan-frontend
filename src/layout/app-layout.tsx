@@ -30,18 +30,25 @@ import { usePanelStore } from "@/store/panelStore";
 import { CollapsibleTrigger } from "@radix-ui/react-collapsible";
 import { differenceInDays } from "date-fns";
 import {
+  BanknoteArrowDown,
   BarChart3,
+  Boxes,
+  CarIcon,
   ChevronsUpDown,
-  CogIcon,
+  Codesandbox,
+  Cog,
   CreditCard,
   DownloadIcon,
   ImageIcon,
   LayoutDashboard,
   LockIcon, // New icon for POS
   Package,
-  Scale, // Renamed from SquareTerminal
+  PackageOpen,
+  Scale,
+  ShapesIcon, // Renamed from SquareTerminal
   ShoppingCart, // New icon for Inventory
-  Store, // New icon for Reports
+  Store,
+  UserCog, // New icon for Reports
   Users,
 } from "lucide-react";
 import React from "react";
@@ -81,16 +88,15 @@ export default function AppLayout() {
           {
             title: "Point of Sale (POS)",
             url: "/pos",
-            icon: ShoppingCart, // Used for POS
+            icon: ShoppingCart,
             addedDate: new Date(2025, 10, 30),
           },
           {
-            title: "Order History", // 🎯 Entity: order
+            title: "Order History",
             url: "/orders",
             icon: BarChart3,
             addedDate: new Date(2025, 1, 28),
           },
-          // 💡 Removed generic "Reports" here, consolidated under a dedicated Reports module
         ],
       },
       {
@@ -98,91 +104,104 @@ export default function AppLayout() {
         isCollapsible: false,
         list: [
           {
-            title: "Products", // 🎯 Entity: product
+            title: "Products",
             url: "/products",
+            icon: PackageOpen,
+            addedDate: new Date(2025, 1, 28),
+          },
+          {
+            title: "Product Groups",
+            url: "/product-groups",
             icon: Package,
-            addedDate: new Date(2025, 1, 28),
-          },
-          {
-            title: "Stock & Inventory", // 🎯 Entity: stock
-            url: "/inventory",
-            icon: DownloadIcon, // Icon for stock (download/tracking)
-            addedDate: new Date(2025, 1, 28),
-          },
-          {
-            title: "Stock History", // 🎯 Entity: stock history
-            url: "/stock-history",
-            icon: DownloadIcon, // Reusing icon, maybe use a different one if available
             addedDate: new Date(2025, 11, 1),
           },
+          // {
+          //   title: "Stock & Inventory",
+          //   url: "/inventory",
+          //   icon: Store,
+          //   addedDate: new Date(2025, 1, 28),
+          // },
+          // {
+          //   title: "Stock History",
+          //   url: "/stock-history",
+          //   icon: DownloadIcon,
+          //   addedDate: new Date(2025, 11, 1),
+          // },
           {
-            title: "Warehouse / Store", // 🎯 Entity: warehouse
+            title: "Warehouse / Store",
             url: "/warehouses",
-            icon: Store, // Icon for physical locations
+            icon: Store,
             addedDate: new Date(2025, 11, 1),
           },
         ],
       },
+      // TODO add later if necessary
+      // {
+      //   key: "Purchasing & Suppliers",
+      //   isCollapsible: true,
+      //   list: [
+      //     {
+      //       title: "Purchase Orders",
+      //       url: "/purchases",
+      //       icon: DownloadIcon,
+      //       addedDate: new Date(2025, 11, 1),
+      //     },
+      //     {
+      //       title: "Suppliers",
+      //       url: "/suppliers",
+      //       icon: Users,
+      //       addedDate: new Date(2025, 11, 1),
+      //     },
+      //   ],
+      // },
       {
-        key: "Purchasing & Suppliers", // 🚀 NEW PRIMARY MODULE
+        key: "People",
         isCollapsible: true,
         list: [
           {
-            title: "Purchase Orders", // 🎯 Entity: purchase
-            url: "/purchases",
-            icon: DownloadIcon, // Icon for incoming goods
-            addedDate: new Date(2025, 11, 1),
-          },
-          {
-            title: "Suppliers", // 🎯 Entity: supplier
-            url: "/suppliers",
-            icon: Users, // Can reuse Users icon for external partners
-            addedDate: new Date(2025, 11, 1),
-          },
-        ],
-      },
-      {
-        key: "People & Loyalty", // 👥 Renamed to better encompass all users
-        isCollapsible: true,
-        list: [
-          {
-            title: "Customer List", // 🎯 Entity: customer
+            title: "Customer List",
             url: "/customers",
             icon: Users,
             addedDate: new Date(2025, 1, 28),
           },
           {
-            title: "Staff", // 🎯 Entity: staff
+            title: "Staff",
             url: "/staff",
-            icon: Users,
+            icon: UserCog,
             addedDate: new Date(2025, 1, 28),
           },
           {
-            title: "Loyalty Levels", // 🎯 Entity: loyalty level
-            url: "/loyalty-levels",
-            icon: BarChart3, // Using this for levels/tiers
+            title: "Admin Users",
+            url: "/admin-users",
+            icon: LockIcon,
             addedDate: new Date(2025, 11, 1),
           },
+          // {
+          //   title: "Loyalty Levels",
+          //   url: "/loyalty-levels",
+          //   icon: BarChart3,
+          //   addedDate: new Date(2025, 11, 1),
+          // },
         ],
       },
       {
-        key: "Reports & Finance", // 📊 NEW PRIMARY MODULE
+        key: "Reports & Finance",
         isCollapsible: true,
         list: [
           {
-            title: "Financial Reports", // Draws from Payment/Order/Purchase
+            title: "Financial Reports",
             url: "/reports/finance",
             icon: BarChart3,
             addedDate: new Date(2025, 11, 1),
           },
           {
-            title: "Payments", // 🎯 Entity: payment
+            title: "Payments",
             url: "/payments",
             icon: CreditCard,
             addedDate: new Date(2025, 11, 1),
           },
           {
-            title: "Receipts", // 🎯 Entity: receipt
+            title: "Receipts",
             url: "/receipts",
             icon: DownloadIcon,
             addedDate: new Date(2025, 11, 1),
@@ -192,69 +211,57 @@ export default function AppLayout() {
     ],
     configuration: [
       {
-        title: "Admin Users", // 🎯 Entity: admin
-        url: "/admin-users",
-        icon: LockIcon,
-        addedDate: new Date(2025, 11, 1),
-      },
-      {
-        title: "Media", // 🎯 Entity: admin
+        title: "Media",
         url: "/media",
         icon: ImageIcon,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Product Categories", // 🎯 Entity: category
+        title: "Product Categories",
         url: "/product-categories",
-        icon: Package,
+        icon: ShapesIcon,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Product Groups", // 🎯 Entities: product group, product type
-        url: "/product-groups",
-        icon: Package,
-        addedDate: new Date(2025, 11, 1),
-      },
-      {
-        title: "Product Type", // 🎯 Entities: product group, product type
+        title: "Product Type",
         url: "/product-type",
-        icon: Package,
+        icon: Boxes,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Brands", // 🎯 Entity: brand
+        title: "Brands",
         url: "/brands",
-        icon: Package,
+        icon: Codesandbox,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Payment Methods", // 🎯 Entity: payment type
+        title: "Payment Methods",
         url: "/payment-methods",
         icon: CreditCard,
         addedDate: new Date(2025, 1, 28),
       },
       {
-        title: "Other Charges", // 🎯 Entity: other charge
+        title: "Other Charges",
         url: "/other-charges",
-        icon: Scale, // Use Scale for financial charges/fees
+        icon: BanknoteArrowDown,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Unit Conversions", // 🎯 Entity: unit conversion
+        title: "Unit Conversions",
         url: "/unit-conversions",
         icon: Scale,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "Car Gate", // 🎯 Entity: car-gate
+        title: "Car Gate",
         url: "/car-gate",
-        icon: Store,
+        icon: CarIcon,
         addedDate: new Date(2025, 11, 1),
       },
       {
-        title: "General Settings", // 🎯 Entity: settings
+        title: "General Settings",
         url: "/settings",
-        icon: CogIcon,
+        icon: Cog,
         addedDate: new Date(2025, 1, 28),
       },
     ],

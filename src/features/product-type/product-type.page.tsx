@@ -1,3 +1,4 @@
+import DeleteButton from "@/components/shared/delete-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { ErrorResponse } from "@/lib/actionHelper";
+import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
-import { Edit, Image, PlusCircle, Trash2 } from "lucide-react";
+import { Edit, Image, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
-import { getProductTypes } from "./product-type.action";
+import { getProductTypes, removeProductType } from "./product-type.action";
 import ProductTypeForm from "./product-type.from";
 import type { ProductTypeResponse } from "./product-type.response";
 
@@ -62,6 +66,7 @@ export default function ProductTypePage() {
       ),
     });
   };
+  const { setError } = useErrorStore();
 
   if (error) {
     return <ErrorPage errors={[error]} />;
@@ -74,7 +79,7 @@ export default function ProductTypePage() {
           Product Type ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search categories..." />
+          <Input placeholder="Search..." />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Product Type
           </Button>
@@ -127,16 +132,20 @@ export default function ProductTypePage() {
                     >
                       <Edit className="h-4 w-4 text-primary" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation(); /* Delete Logic */
+                    <DeleteButton
+                      deleteAction={async () => {
+                        const response = await removeProductType({
+                          id: productType.id,
+                          version: productType.version,
+                        });
+                        if (response.response?.isSuccess) {
+                          toast.success("Payment Type deleted successfully.");
+                          refetch();
+                        } else {
+                          setError(response.error as ErrorResponse);
+                        }
                       }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))}

@@ -95,6 +95,7 @@ function ProductTypeDropdown({
                   value={option.name}
                   onSelect={() => {
                     setValue(option.id);
+                    setOpen(false);
                   }}
                 >
                   <Check

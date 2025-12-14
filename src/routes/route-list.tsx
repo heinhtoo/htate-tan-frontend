@@ -1,17 +1,28 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import AdminPage from "@/features/admin/admin.page";
 import { refreshToken } from "@/features/auth/auth.action";
 import LoginPage from "@/features/auth/login.page";
 import BrandPage from "@/features/brand/brand.page";
+import CarGatePage from "@/features/car-gate/car-gate.page";
 import CategoryPage from "@/features/category/category.page";
 import ErrorPage from "@/features/common/error.page";
 import LoadingPage from "@/features/common/loading.page";
 import NotFoundPage from "@/features/common/not-found.page";
+import CustomerPage from "@/features/customer/customer.page";
 import DashboardPage from "@/features/dashboard/dashboard.page";
 import MediaPage from "@/features/media/media.page";
+import OtherChargePage from "@/features/other-charge/other-charge.page";
+import PaymentTypePage from "@/features/payment-type/payment-type.page";
 import POSPage from "@/features/post/pos.page";
+import ProductGroupPage from "@/features/product-group/product-group.page";
 import ProductTypePage from "@/features/product-type/product-type.page";
+import ProductDetailsPage from "@/features/product/product-details.page";
+import ProductPage from "@/features/product/product.page";
 import { getProfile } from "@/features/profile/profile.action";
 import Wrapper from "@/features/providers/Wrapper";
+import SettingPage from "@/features/setting/setting.page";
+import StaffPage from "@/features/staff/staff.page";
+import UnitConversionPage from "@/features/unit-conversion/unit-conversion.page";
+import WarehousePage from "@/features/warehouse/warehouse.page";
 import AppLayout from "@/layout/app-layout";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -23,25 +34,7 @@ import AdminRoute from "./AdminRoutes";
 import ProtectedRoute from "./ProtectedRoutes";
 
 // 💡 Placeholder Components for New Routes (You will create these later)
-const ProductsPage = () => <div>Products Management Page</div>;
 const OrdersPage = () => <div>Order History Page</div>;
-const CustomersPage = () => <div>Customers List Page</div>;
-const StaffPage = () => <div>Staff Management Page</div>;
-const PurchasesPage = () => <div>Purchase Orders Page</div>;
-const SuppliersPage = () => <div>Suppliers Management Page</div>;
-const InventoryPage = () => <div>Stock & Inventory Page</div>;
-const StockHistoryPage = () => <div>Stock History Page</div>;
-const WarehousesPage = () => <div>Warehouses Management Page</div>;
-const LoyaltyLevelsPage = () => <div>Loyalty Levels Setup Page</div>;
-const PaymentsPage = () => <div>Payments List Page</div>;
-const ReceiptsPage = () => <div>Receipts View Page</div>;
-const AdminUsersPage = () => <div>Admin Users Management Page</div>;
-const ProductGroupsPage = () => <div>Product Groups Setup Page</div>;
-const PaymentMethodsPage = () => <div>Payment Methods Setup Page</div>;
-const OtherChargesPage = () => <div>Other Charges Setup Page</div>;
-const UnitConversionsPage = () => <div>Unit Conversions Setup Page</div>;
-const CarGateLogsPage = () => <div>Car Gate Logs Page</div>;
-const SettingsPage = () => <div>General Settings Page</div>;
 const FinancialReportsPage = () => <div>Financial Reports Page</div>;
 
 function RouteList() {
@@ -133,41 +126,41 @@ function RouteList() {
             <Route path="orders" element={<OrdersPage />} />
 
             {/* Inventory & Products Routes */}
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="inventory" element={<InventoryPage />} />
-            <Route path="stock-history" element={<StockHistoryPage />} />
-            <Route path="warehouses" element={<WarehousesPage />} />
-
-            {/* Purchasing & Suppliers Routes */}
-            <Route path="purchases" element={<PurchasesPage />} />
-            <Route path="suppliers" element={<SuppliersPage />} />
-
-            {/* People & Loyalty Routes */}
-            <Route path="customers" element={<CustomersPage />} />
-            <Route path="staff" element={<StaffPage />} />
-            <Route path="loyalty-levels" element={<LoyaltyLevelsPage />} />
-
-            {/* Reports & Finance Routes */}
-            <Route path="reports/finance" element={<FinancialReportsPage />} />
-            <Route path="payments" element={<PaymentsPage />} />
-            <Route path="receipts" element={<ReceiptsPage />} />
 
             {/* Configuration Routes (Admin Only) */}
             <Route element={<AdminRoute />}>
+              <Route path="products" element={<ProductPage />} />
+              <Route path="products/:slug" element={<ProductDetailsPage />} />
+              <Route path="warehouses" element={<WarehousePage />} />
+
+              {/* Purchasing & Suppliers Routes */}
+              {/* 
+            <Route path="purchases" element={<PurchasesPage />} />
+            <Route path="suppliers" element={<SupplierPage />} /> 
+            */}
+
+              {/* People & Loyalty Routes */}
+              <Route path="customers" element={<CustomerPage />} />
+              <Route path="staff" element={<StaffPage />} />
+              {/* <Route path="loyalty-levels" element={<LoyaltyLevelsPage />} /> */}
+
+              {/* Reports & Finance Routes */}
+              <Route
+                path="reports/finance"
+                element={<FinancialReportsPage />}
+              />
+
               <Route path="media" element={<MediaPage />} />
-              <Route path="admin-users" element={<AdminUsersPage />} />
+              <Route path="admin-users" element={<AdminPage />} />
               <Route path="product-categories" element={<CategoryPage />} />
               <Route path="product-type" element={<ProductTypePage />} />
-              <Route path="product-groups" element={<ProductGroupsPage />} />
+              <Route path="product-groups" element={<ProductGroupPage />} />
               <Route path="brands" element={<BrandPage />} />
-              <Route path="payment-methods" element={<PaymentMethodsPage />} />
-              <Route path="other-charges" element={<OtherChargesPage />} />
-              <Route
-                path="unit-conversions"
-                element={<UnitConversionsPage />}
-              />
-              <Route path="car-gate" element={<CarGateLogsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route path="payment-methods" element={<PaymentTypePage />} />
+              <Route path="other-charges" element={<OtherChargePage />} />
+              <Route path="unit-conversions" element={<UnitConversionPage />} />
+              <Route path="car-gate" element={<CarGatePage />} />
+              <Route path="settings" element={<SettingPage />} />
             </Route>
           </Route>
         </Route>

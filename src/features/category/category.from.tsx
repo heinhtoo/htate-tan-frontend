@@ -21,7 +21,7 @@ import { z } from "zod";
 import ImageButton from "../media/image-button";
 import { createCategory, updateCategory } from "./category.action";
 import type { CategoryResponse } from "./category.response";
-import { categorySchema } from "./category.schema";
+import { categorieschema } from "./category.schema";
 
 interface CategoryFormProps {
   initialData: CategoryResponse | null;
@@ -36,8 +36,8 @@ export default function CategoryForm({
   const { setError } = useErrorStore();
   const { closePanel } = usePanelStore();
 
-  const form = useForm<z.infer<typeof categorySchema>>({
-    resolver: zodResolver(categorySchema),
+  const form = useForm<z.infer<typeof categorieschema>>({
+    resolver: zodResolver(categorieschema),
     defaultValues: {
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
@@ -52,7 +52,7 @@ export default function CategoryForm({
   /** ----------------------------------------
    * SUBMIT HANDLER
    * -------------------------------------- */
-  async function handleFormSubmit(values: z.infer<typeof categorySchema>) {
+  async function handleFormSubmit(values: z.infer<typeof categorieschema>) {
     const action = isEditing
       ? updateCategory({
           id: initialData!.id,

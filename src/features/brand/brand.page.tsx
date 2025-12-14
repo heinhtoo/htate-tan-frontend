@@ -1,3 +1,4 @@
+import DeleteButton from "@/components/shared/delete-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { ErrorResponse } from "@/lib/actionHelper";
+import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
-import { Edit, Image, PlusCircle, Trash2 } from "lucide-react";
+import { Edit, Image, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
-import { getBrands } from "./brand.action";
+import { getBrands, removeBrand } from "./brand.action";
 import BrandForm from "./brand.from";
 import type { BrandResponse } from "./brand.response";
 
@@ -57,6 +61,7 @@ export default function BrandPage() {
       ),
     });
   };
+  const { setError } = useErrorStore();
 
   if (error) {
     return <ErrorPage errors={[error]} />;
@@ -69,7 +74,7 @@ export default function BrandPage() {
           Brands ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search categories..." />
+          <Input placeholder="Search..." />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Brand
           </Button>
@@ -130,16 +135,20 @@ export default function BrandPage() {
                     >
                       <Edit className="h-4 w-4 text-primary" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation(); /* Delete Logic */
+                    <DeleteButton
+                      deleteAction={async () => {
+                        const response = await removeBrand({
+                          id: brand.id,
+                          version: brand.version,
+                        });
+                        if (response.response?.isSuccess) {
+                          toast.success("Brand deleted successfully.");
+                          refetch();
+                        } else {
+                          setError(response.error as ErrorResponse);
+                        }
                       }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))}
