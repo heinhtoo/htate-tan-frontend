@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CategoryDropdown from "@/components/dropdown/category.dropdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,7 @@ export default function UnitConversionForm({
   const { setError } = useErrorStore();
   const { closePanel } = usePanelStore();
 
-  const form = useForm<z.infer<typeof UnitConversionSchema>>({
+  const form = useForm<any>({
     resolver: zodResolver(UnitConversionSchema),
     defaultValues: {
       name: initialData?.name ?? "",

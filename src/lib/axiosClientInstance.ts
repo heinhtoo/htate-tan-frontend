@@ -1,8 +1,5 @@
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "../store/authStore";
-
-const clientSession = uuidv4();
 
 // Create an instance
 const axiosClientInstance = axios.create({
@@ -16,24 +13,9 @@ axiosClientInstance.interceptors.request.use(
     const authState = useAuthStore.getState();
     const accessToken = authState.accessToken;
 
-    const user = authState.user;
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    if (accessToken && user) {
-      config.headers["tag"] = [
-        user?.hotel?.name,
-        user?.hotel?.id,
-        "booking-admin-portal",
-        import.meta.env.VITE_VERSION,
-      ];
-    } else {
-      config.headers["tag"] = [
-        "booking-admin-portal",
-        import.meta.env.VITE_VERSION,
-      ];
-    }
-    config.headers["X-Client-Session"] = clientSession;
 
     return config;
   },
