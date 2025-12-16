@@ -44,7 +44,6 @@ export default function ProductForm({
     resolver: zodResolver(ProductSchema),
     defaultValues: {
       name: initialData?.name ?? "",
-      sku: initialData?.sku ?? "",
       // Ensure numbers are not undefined/null
       price: initialData?.price ?? 0,
       description: initialData?.description ?? "",
@@ -104,23 +103,6 @@ export default function ProductForm({
                 <FormControl>
                   <Input
                     placeholder="Wireless Mouse"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="sku"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SKU</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="ACC-MS-001"
                     {...field}
                     disabled={isLoading}
                   />

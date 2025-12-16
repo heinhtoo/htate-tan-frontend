@@ -3,8 +3,6 @@ import { z } from "zod";
 export const ProductSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 
-  sku: z.string().min(1, { message: "SKU is required" }),
-
   // z.coerce.number() ensures string inputs (from HTML forms) are treated as numbers
   price: z.coerce
     .number()
