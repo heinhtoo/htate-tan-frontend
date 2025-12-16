@@ -37,7 +37,7 @@ async function getMediasFn({
     }>
   >(
     "/file" +
-      `?tag=${tag}&pageSize=` +
+      `?tag=${tag}&limit=` +
       size +
       (q ? "&q=" + encodeURIComponent(q) : "") +
       (page ? "&page=" + page : "")

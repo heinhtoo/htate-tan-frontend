@@ -16,7 +16,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ImageIcon, Loader2, Tag } from "lucide-react"; // Import Tag and Loader2
 import React, { useEffect, useState } from "react";
 // Assuming getTags is available in the media.action file
-import { ScrollArea } from "@/components/ui/scroll-area"; // Assuming a ScrollArea component
 import { cn } from "@/lib/utils";
 import { getMedias, getTags } from "./media.action";
 
@@ -57,7 +56,7 @@ function MediaDialog({
       // but it's cursor-based, not page-based.
       const data = await getMedias({
         page: page,
-        size: 10,
+        size: 30,
         q: debouncedValue,
         tag, // ➡️ Pass the current tag filter
       });
@@ -126,7 +125,7 @@ function MediaDialog({
         </Button>
       </DialogTrigger>
       {/* Increased dialog width for better media viewing */}
-      <DialogContent className="sm:max-w-4xl p-0 h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-7xl p-0 h-[90vh] flex flex-col">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-blue-600" />
@@ -151,27 +150,25 @@ function MediaDialog({
               {isLoadingTags ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : (
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex space-x-2 pb-1">
-                    {/* ➡️ Render Tags List */}
-                    {tagsList.map((item) => (
-                      <Button
-                        key={item.name}
-                        variant={tag === item.name ? "default" : "outline"}
-                        size="sm"
-                        className={cn(
-                          "h-7 rounded-full text-xs transition-colors",
-                          tag === item.name
-                            ? "bg-blue-600 hover:bg-blue-700"
-                            : "hover:bg-gray-100"
-                        )}
-                        onClick={() => handleTagClick(item.name)}
-                      >
-                        {item.name} ({item.files})
-                      </Button>
-                    ))}
-                  </div>
-                </ScrollArea>
+                <div className="max-w-[50vw] whitespace-nowrap overflow-x-auto flex space-x-2 pb-3">
+                  {/* ➡️ Render Tags List */}
+                  {tagsList.map((item) => (
+                    <Button
+                      key={item.name}
+                      variant={tag === item.name ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-7 rounded-full text-xs transition-colors",
+                        tag === item.name
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "hover:bg-gray-100"
+                      )}
+                      onClick={() => handleTagClick(item.name)}
+                    >
+                      {item.name} ({item.files})
+                    </Button>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -239,29 +236,6 @@ function MediaDialog({
           </div>
         </div>
 
-        <div className="p-6 pt-0">
-          {data?.data.hasPreviousPage && (
-            <div className="flex justify-center mt-4">
-              <Button
-                onClick={() => setPage((prevValue) => prevValue - 1)}
-                disabled={isFetching}
-              >
-                Prev
-              </Button>
-            </div>
-          )}
-          {data?.data.hasNextPage && (
-            <div className="flex justify-center mt-4">
-              <Button
-                onClick={() => setPage((prevValue) => prevValue + 1)}
-                disabled={isFetching}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </div>
-
         <Separator />
         <DialogFooter className="p-6 pt-2">
           <p className="mr-auto text-sm text-gray-500">
@@ -270,16 +244,39 @@ function MediaDialog({
               ? currentImage.substring(0, 30) + "..."
               : currentImage || "None"}
           </p>
-          <Button
-            type="submit"
-            disabled={!currentImage} // Disable save if no image is selected
-            onClick={() => {
-              setValue(currentImage);
-              setOpen(false);
-            }}
-          >
-            Save changes
-          </Button>
+          <div className="flex flex-row items-center gap-3">
+            {data?.data.hasPreviousPage && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setPage((prevValue) => prevValue - 1)}
+                  disabled={isFetching}
+                >
+                  Prev
+                </Button>
+              </div>
+            )}
+            {data?.data.hasNextPage && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setPage((prevValue) => prevValue + 1)}
+                  disabled={isFetching}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={!currentImage} // Disable save if no image is selected
+              onClick={() => {
+                setValue(currentImage);
+                setOpen(false);
+              }}
+            >
+              Save changes
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
