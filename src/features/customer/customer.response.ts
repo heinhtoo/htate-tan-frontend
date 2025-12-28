@@ -10,4 +10,5 @@ export type CustomerResponse = {
   version: number;
   creditLimit: number;
   totalDebt: number;
+  initialDebt: number;
 };

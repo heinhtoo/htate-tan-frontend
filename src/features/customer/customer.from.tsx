@@ -34,7 +34,7 @@ export default function CustomerForm({
   const { setError } = useErrorStore();
   const { closePanel } = usePanelStore();
 
-  const form = useForm<z.infer<typeof CustomerSchema>>({
+  const form = useForm<any>({
     resolver: zodResolver(CustomerSchema),
     defaultValues: {
       name: initialData?.name ?? "",
@@ -44,6 +44,7 @@ export default function CustomerForm({
       state: initialData?.state ?? "",
       township: initialData?.township ?? "",
       creditLimit: initialData?.creditLimit ?? 0,
+      initialDebt: initialData?.initialDebt ?? 0,
     },
   });
 
@@ -175,6 +176,20 @@ export default function CustomerForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Credit Limit</FormLabel>
+              <FormControl>
+                <Input {...field} disabled={isLoading} type="number" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="initialDebt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Initial Debt</FormLabel>
               <FormControl>
                 <Input {...field} disabled={isLoading} type="number" />
               </FormControl>

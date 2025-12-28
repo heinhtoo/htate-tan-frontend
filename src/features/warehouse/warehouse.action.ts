@@ -6,6 +6,36 @@ import { z } from "zod";
 import type { WarehouseResponse } from "./warehouse.response";
 import type { WarehouseSchema } from "./warehouse.schema";
 
+async function getSellableWarehousesFn({
+  page = "1",
+  size = "5",
+  s,
+  q,
+}: {
+  page: string;
+  size: string;
+  s?: string | string[];
+  q?: string;
+}) {
+  const response = await axiosClientInstance.get<
+    APIResponse<WarehouseResponse[]>
+  >(
+    "/common/warehouse?currentPage=" +
+      (parseInt(page) + 1) +
+      "&pageSize=" +
+      size +
+      (s
+        ? Array.isArray(s)
+          ? s.map((item) => "&s=" + item).join("")
+          : "&s=" + s
+        : "") +
+      (q ? "&q=" + q : "")
+  );
+
+  const data = response.data;
+  return { data: data.payload, pagination: data.pagination };
+}
+
 async function getWarehousesFn({
   page = "1",
   size = "5",
@@ -108,6 +138,7 @@ async function removeWarehouseFn({
 }
 
 export const getWarehouses = withHandler(getWarehousesFn);
+export const getSellableWarehouses = withHandler(getSellableWarehousesFn);
 export const createWarehouse = withHandler(createWarehouseFn);
 export const updateWarehouse = withHandler(updateWarehouseFn);
 export const removeWarehouse = withHandler(removeWarehouseFn);

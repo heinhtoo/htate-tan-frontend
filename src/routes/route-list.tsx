@@ -7,12 +7,15 @@ import CategoryPage from "@/features/category/category.page";
 import ErrorPage from "@/features/common/error.page";
 import LoadingPage from "@/features/common/loading.page";
 import NotFoundPage from "@/features/common/not-found.page";
+import CustomerDetailsPage from "@/features/customer/customer-details.page";
 import CustomerPage from "@/features/customer/customer.page";
 import DashboardPage from "@/features/dashboard/dashboard.page";
 import MediaPage from "@/features/media/media.page";
+import OrderDetailsPage from "@/features/orders/order-details.page";
+import OrdersPage from "@/features/orders/orders.page";
 import OtherChargePage from "@/features/other-charge/other-charge.page";
 import PaymentTypePage from "@/features/payment-type/payment-type.page";
-import POSPage from "@/features/post/pos.page";
+import POSPage from "@/features/pos/pos.page";
 import ProductGroupPage from "@/features/product-group/product-group.page";
 import ProductTypePage from "@/features/product-type/product-type.page";
 import ProductDetailsPage from "@/features/product/product-details.page";
@@ -34,7 +37,6 @@ import AdminRoute from "./AdminRoutes";
 import ProtectedRoute from "./ProtectedRoutes";
 
 // 💡 Placeholder Components for New Routes (You will create these later)
-const OrdersPage = () => <div>Order History Page</div>;
 const FinancialReportsPage = () => <div>Financial Reports Page</div>;
 
 function RouteList() {
@@ -124,6 +126,7 @@ function RouteList() {
             <Route index element={<DashboardPage />} />
             <Route path="pos" element={<POSPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/:slug" element={<OrderDetailsPage />} />
 
             {/* Inventory & Products Routes */}
 
@@ -141,6 +144,8 @@ function RouteList() {
 
               {/* People & Loyalty Routes */}
               <Route path="customers" element={<CustomerPage />} />
+              <Route path="customers/:slug" element={<CustomerDetailsPage />} />
+
               <Route path="staff" element={<StaffPage />} />
               {/* <Route path="loyalty-levels" element={<LoyaltyLevelsPage />} /> */}
 

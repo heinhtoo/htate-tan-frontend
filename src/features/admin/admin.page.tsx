@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useAuthStore } from "@/store/authStore";
 import { useErrorStore } from "@/store/error.store";
@@ -31,15 +32,17 @@ import type { AdminResponse } from "./admin.response";
 export default function AdminPage() {
   const { openPanel } = usePanelStore();
   const [page, setPage] = useState(0);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query);
   const { user } = useAuthStore();
   const { data, error, refetch } = useQuery({
-    queryKey: ["admin-all", page],
+    queryKey: ["admin-all", page, debouncedQuery],
     queryFn: async () => {
       const data = await getAdmins({
         page: page ? page + "" : "0",
         size: "10",
         s: "",
-        q: "",
+        q: debouncedQuery,
       });
       if (data.response) {
         return data.response;
@@ -78,7 +81,13 @@ export default function AdminPage() {
           Admin ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search..." />
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Admin
           </Button>

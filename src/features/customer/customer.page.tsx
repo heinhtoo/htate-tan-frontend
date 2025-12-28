@@ -1,5 +1,6 @@
 import DeleteButton from "@/components/shared/delete-button";
 import { PagePagination } from "@/components/shared/page-pagination";
+import SortedTableHead from "@/components/shared/sorted-table-head";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { formatCurrency } from "@/lib/currencyHelper";
 import { useErrorStore } from "@/store/error.store";
@@ -25,19 +27,21 @@ import { getCustomers, removeCustomer } from "./customer.action";
 import CustomerForm from "./customer.from";
 import type { CustomerResponse } from "./customer.response";
 
-// Mock Data structure based on the Customer entity
-
 export default function CustomerPage() {
   const { openPanel } = usePanelStore();
   const [page, setPage] = useState(0);
+
+  const [orderBy, setOrderBy] = useState("");
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 1000);
   const { data, error, refetch } = useQuery({
-    queryKey: ["customer-all", page],
+    queryKey: ["customer-all", page, debouncedQuery, orderBy],
     queryFn: async () => {
       const data = await getCustomers({
         page: page ? page + "" : "0",
-        size: "10",
-        s: "",
-        q: "",
+        size: "30",
+        s: orderBy,
+        q: debouncedQuery,
       });
       if (data.response) {
         return data.response;
@@ -71,7 +75,12 @@ export default function CustomerPage() {
   if (error) {
     return <ErrorPage errors={[error]} />;
   }
-
+  const toggleSort = (type: "name" | "phone" | "address" | "total_debt") => {
+    setOrderBy((prev) => {
+      if (prev === `${type}_asc`) return `${type}_desc`;
+      return `${type}_asc`;
+    });
+  };
   return (
     <Card className="m-6 h-full">
       <CardHeader className="flex flex-row justify-between items-center">
@@ -79,7 +88,13 @@ export default function CustomerPage() {
           Customer ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search..." />
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Customer
           </Button>
@@ -90,10 +105,31 @@ export default function CustomerPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Credit</TableHead>
+                <SortedTableHead
+                  headerName="Name"
+                  orderBy={orderBy}
+                  orderKey="name"
+                  toggleSort={toggleSort}
+                />
+                <SortedTableHead
+                  headerName="Phone"
+                  orderBy={orderBy}
+                  orderKey="phone"
+                  toggleSort={toggleSort}
+                />
+                <SortedTableHead
+                  headerName="Address"
+                  orderBy={orderBy}
+                  orderKey="address"
+                  toggleSort={toggleSort}
+                />
+                <TableHead>Total Credit</TableHead>
+                <SortedTableHead
+                  headerName="Total Debt"
+                  orderBy={orderBy}
+                  orderKey="total_debt"
+                  toggleSort={toggleSort}
+                />
                 <TableHead className="text-right w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -195,8 +231,16 @@ export default function CustomerPage() {
                         );
                       })()}
                     </TableCell>
+                    <TableCell>{formatCurrency(customer.totalDebt)}</TableCell>
 
                     <TableCell className="text-right space-x-2">
+                      {/* 
+                      // TODO add customer details
+                      <Button variant={"ghost"} asChild>
+                        <Link to={"/customers/" + customer.id}>
+                          <ListIcon className="h-4 w-4" />
+                        </Link>
+                      </Button> */}
                       <Button
                         variant="ghost"
                         size="icon"

@@ -2,6 +2,7 @@
 import Footer from "@/components/footer";
 import AppHeader from "@/components/nav/app-header";
 import NavBreadcrumb from "@/components/nav/nav-breadcrumb";
+import { UserButton } from "@/components/nav/user-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -443,6 +444,7 @@ export default function AppLayout() {
           </div>
           <div className="flex flex-row items-center gap-3 px-4">
             {/* Necessary buttons */}
+            <UserButton />
           </div>
         </header>
         <main

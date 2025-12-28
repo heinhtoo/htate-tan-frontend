@@ -12,11 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
 import { Currency, Edit, PlusCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
 import ModifyProductGroupForm from "./modify-price-product-group.from";
@@ -28,14 +30,16 @@ import type { ProductGroupResponse } from "./product-group.response";
 
 export default function ProductGroupPage() {
   const { openPanel } = usePanelStore();
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 1000);
   const { data, error, refetch } = useQuery({
-    queryKey: ["product-group-all"],
+    queryKey: ["product-group-all", debouncedQuery],
     queryFn: async () => {
       const data = await getProductGroups({
         page: "0",
         size: "0",
         s: "",
-        q: "",
+        q: debouncedQuery,
       });
       if (data.response) {
         return data.response;
@@ -93,7 +97,13 @@ export default function ProductGroupPage() {
           Product Group ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search..." />
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Product Group
           </Button>

@@ -15,9 +15,15 @@ export const CustomerSchema = z.object({
 
   address: z.string({ message: "Address must be a string" }).optional(),
 
-  creditLimit: z
+  creditLimit: z.coerce
     .number({
       error: "Credit limit is required",
+    })
+    .int(),
+
+  initialDebt: z.coerce
+    .number({
+      error: "Initial Debt is required",
     })
     .int(),
 });

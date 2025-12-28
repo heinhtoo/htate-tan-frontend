@@ -12,11 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Image, PlusCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
 import { getProductTypes, removeProductType } from "./product-type.action";
@@ -27,14 +29,16 @@ import type { ProductTypeResponse } from "./product-type.response";
 
 export default function ProductTypePage() {
   const { openPanel } = usePanelStore();
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 1000);
   const { data, error, refetch } = useQuery({
-    queryKey: ["product-type-all"],
+    queryKey: ["product-type-all", debouncedQuery],
     queryFn: async () => {
       const data = await getProductTypes({
         page: "0",
         size: "0",
         s: "",
-        q: "",
+        q: debouncedQuery,
       });
       if (data.response) {
         return data.response;
@@ -79,7 +83,13 @@ export default function ProductTypePage() {
           Product Type ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search..." />
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Product Type
           </Button>

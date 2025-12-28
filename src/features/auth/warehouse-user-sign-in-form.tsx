@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import SellableWarehouseDropdown from "@/components/dropdown/sellable-warehouse.dropdown";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox"; // Assuming you have a Checkbox component
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage, // Assuming you have FormMessage component for validation errors
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner"; // Assuming you have a Spinner component
@@ -40,9 +39,9 @@ export default function WarehouseUserSignInForm({
   const form = useForm<z.infer<typeof WarehouseUserSignInFormSchema>>({
     resolver: zodResolver(WarehouseUserSignInFormSchema),
     defaultValues: {
+      warehouseInfo: 0,
       password: "",
       username: "",
-      rememberMe: false,
     },
   });
 
@@ -95,10 +94,11 @@ export default function WarehouseUserSignInForm({
                     >
                       Warehouse Info
                     </FormLabel>
-                    <Input
-                      placeholder="Enter warehouse"
-                      disabled={isLoading}
-                      {...field}
+                    <SellableWarehouseDropdown
+                      setValue={(value) => {
+                        field.onChange(value);
+                      }}
+                      value={field.value}
                     />
                     <FormMessage />
                   </div>
@@ -115,10 +115,10 @@ export default function WarehouseUserSignInForm({
                       htmlFor="username"
                       className="text-base font-bold"
                     >
-                      Username or Email
+                      Username
                     </FormLabel>
                     <Input
-                      placeholder="Enter username or email"
+                      placeholder="Enter username"
                       disabled={isLoading}
                       {...field}
                     />
@@ -146,28 +146,6 @@ export default function WarehouseUserSignInForm({
                       {...field}
                     />
                     <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="rememberMe"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-3">
-                  <FormControl>
-                    {/* Assuming Checkbox component exists */}
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm font-normal">
-                      Remember me
-                    </FormLabel>
                   </div>
                 </FormItem>
               )}

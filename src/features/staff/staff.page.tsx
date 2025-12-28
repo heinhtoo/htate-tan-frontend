@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
@@ -30,14 +31,16 @@ import type { StaffResponse } from "./staff.response";
 export default function StaffPage() {
   const { openPanel } = usePanelStore();
   const [page, setPage] = useState(0);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 1000);
   const { data, error, refetch } = useQuery({
-    queryKey: ["staff-all", page],
+    queryKey: ["staff-all", page, debouncedQuery],
     queryFn: async () => {
       const data = await getStaffs({
         page: page ? page + "" : "0",
-        size: "10",
+        size: "30",
         s: "",
-        q: "",
+        q: debouncedQuery,
       });
       if (data.response) {
         return data.response;
@@ -76,7 +79,13 @@ export default function StaffPage() {
           Staff ({data?.pagination?.totalItems})
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
-          <Input placeholder="Search..." />
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.currentTarget.value);
+            }}
+          />
           <Button onClick={handleAdd} className="gap-2">
             <PlusCircle className="h-4 w-4" /> Add New Staff
           </Button>

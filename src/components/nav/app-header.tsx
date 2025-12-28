@@ -73,7 +73,7 @@ function AppHeader() {
                 className="cursor-pointer gap-2 p-3 font-medium text-muted-foreground transition hover:font-semibold hover:text-primary"
                 asChild
               >
-                <Link to={"/new-hotel"}>Add another hotel</Link>
+                <Link to={"/warehouses"}>Add another warehouse</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
