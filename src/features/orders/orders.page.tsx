@@ -330,7 +330,7 @@ export default function OrdersPage() {
                     >
                       <td className="px-4 py-2.5">
                         <div className="font-bold text-slate-900 text-sm italic">
-                          #{order.receiptNo || order.id}
+                          #{order.id}
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium">
                           {new Date(order.createdAt).toLocaleDateString()} ·{" "}

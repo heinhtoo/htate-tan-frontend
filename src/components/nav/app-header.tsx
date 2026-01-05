@@ -1,4 +1,4 @@
-import { getRole } from "@/lib/authHelper";
+import { getRole, isAdmin } from "@/lib/authHelper";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronsUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -68,13 +68,14 @@ function AppHeader() {
                 </div>
               </div>
               <Separator />
-
-              <DropdownMenuItem
-                className="cursor-pointer gap-2 p-3 font-medium text-muted-foreground transition hover:font-semibold hover:text-primary"
-                asChild
-              >
-                <Link to={"/warehouses"}>Add another warehouse</Link>
-              </DropdownMenuItem>
+              {isAdmin(user) && (
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2 p-3 font-medium text-muted-foreground transition hover:font-semibold hover:text-primary"
+                  asChild
+                >
+                  <Link to={"/warehouses"}>Add another warehouse</Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>

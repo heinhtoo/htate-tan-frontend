@@ -110,7 +110,12 @@ export default function UnitConversionForm({
             <FormItem>
               <FormLabel>Conversion Rate</FormLabel>
               <FormControl>
-                <Input {...field} type="number" disabled={isLoading} />
+                <Input
+                  {...field}
+                  type="number"
+                  disabled={isLoading}
+                  onWheelCapture={(e) => e.currentTarget.blur()}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

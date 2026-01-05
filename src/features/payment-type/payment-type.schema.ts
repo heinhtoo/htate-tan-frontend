@@ -13,6 +13,8 @@ export const PaymentTypeSchema = z.object({
 
   imagePath: z.string().min(1, { message: "Image Path should not be empty" }),
 
+  qrPath: z.string().optional(),
+
   accountNo: z.string({ message: "Account No must be a string" }).optional(),
 
   showQR: z.boolean({ message: "showQR must be a boolean" }).optional(),

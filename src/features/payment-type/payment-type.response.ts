@@ -8,5 +8,6 @@ export type PaymentTypeResponse = {
   showValue: boolean;
   version: number;
   imagePath: string;
+  qrPath: string;
   commission: number;
 };

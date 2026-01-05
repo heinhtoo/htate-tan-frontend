@@ -13,11 +13,9 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
@@ -79,6 +77,7 @@ export default function AppLayout() {
       {
         key: "Sales & POS",
         isCollapsible: false,
+        isAdminOnly: false,
         list: [
           {
             title: "Dashboard",
@@ -103,6 +102,7 @@ export default function AppLayout() {
       {
         key: "Inventory & Products",
         isCollapsible: false,
+        isAdminOnly: true,
         list: [
           {
             title: "Products",
@@ -136,28 +136,30 @@ export default function AppLayout() {
           },
         ],
       },
-      // TODO add later if necessary
-      // {
-      //   key: "Purchasing & Suppliers",
-      //   isCollapsible: true,
-      //   list: [
-      //     {
-      //       title: "Purchase Orders",
-      //       url: "/purchases",
-      //       icon: DownloadIcon,
-      //       addedDate: new Date(2025, 11, 1),
-      //     },
-      //     {
-      //       title: "Suppliers",
-      //       url: "/suppliers",
-      //       icon: Users,
-      //       addedDate: new Date(2025, 11, 1),
-      //     },
-      //   ],
-      // },
+      {
+        key: "Purchasing & Suppliers",
+        isCollapsible: true,
+        isAdminOnly: true,
+        list: [
+          {
+            title: "Purchase Orders",
+            url: "/purchase",
+            icon: DownloadIcon,
+            addedDate: new Date(2025, 11, 1),
+          },
+          {
+            title: "Suppliers",
+            url: "/suppliers",
+            icon: Users,
+            addedDate: new Date(2025, 11, 1),
+          },
+        ],
+      },
       {
         key: "People",
         isCollapsible: true,
+        isAdminOnly: true,
+
         list: [
           {
             title: "Customer List",
@@ -188,6 +190,8 @@ export default function AppLayout() {
       {
         key: "Reports & Finance",
         isCollapsible: true,
+        isAdminOnly: true,
+
         list: [
           {
             title: "Financial Reports",
@@ -274,92 +278,79 @@ export default function AppLayout() {
       {/* The rest of the component structure remains the same, 
           using the updated 'data' object for navigation links. */}
       <Sidebar collapsible="offcanvas" className="overscroll-none">
-        {user?.isAdmin ? (
-          <AppHeader />
-        ) : (
-          <SidebarHeader>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  size="lg"
-                  className="rounded-none p-4 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  {/* // TODO add avatar */}
-                  {/* Existing Warehouse/User details removed for brevity, 
-                  but you should customize this for your aunt's store name/logo */}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarHeader>
-        )}
+        <AppHeader />
         <SidebarContent className="overflow-y-scroll scrollbar-hide">
-          {data.navList.map((nav, index) => {
-            return (
-              <SidebarGroup key={"nav-list-" + index}>
-                <Collapsible
-                  defaultOpen={
-                    !nav.isCollapsible ||
-                    nav.list.find((item) => pathname.includes(item.url))
-                      ? true
-                      : false
-                  }
-                >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      className="flex w-full justify-between p-0 hover:bg-gray-50 hover:text-gray-800"
-                      size={"sm"}
-                      variant={"ghost"}
-                    >
-                      <SidebarGroupLabel className="pointer-events-none">
-                        {nav.key}
-                      </SidebarGroupLabel>
-                      <ChevronsUpDown className="mr-3 text-gray-400" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu>
-                      {nav.list.map((item: any) => (
-                        <SidebarMenuButton
-                          tooltip={item.title}
-                          key={item.title}
-                          className={
-                            item.url === "/"
-                              ? pathname === "/"
-                                ? "bg-primary/10 text-gray-800"
-                                : "opacity-70"
-                              : pathname.startsWith(item.url)
-                                ? "bg-primary/10 text-gray-800"
-                                : "opacity-70"
-                          }
-                          asChild
-                        >
-                          <Link
-                            to={item.url}
-                            className="flex flex-row items-center px-4 py-2.5"
+          {data.navList
+            .filter((item) =>
+              isAdmin(user) ? true : item.isAdminOnly === false
+            )
+            .map((nav, index) => {
+              return (
+                <SidebarGroup key={"nav-list-" + index}>
+                  <Collapsible
+                    defaultOpen={
+                      !nav.isCollapsible ||
+                      nav.list.find((item) => pathname.includes(item.url))
+                        ? true
+                        : false
+                    }
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        className="flex w-full justify-between p-0 hover:bg-gray-50 hover:text-gray-800"
+                        size={"sm"}
+                        variant={"ghost"}
+                      >
+                        <SidebarGroupLabel className="pointer-events-none">
+                          {nav.key}
+                        </SidebarGroupLabel>
+                        <ChevronsUpDown className="mr-3 text-gray-400" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenu>
+                        {nav.list.map((item: any) => (
+                          <SidebarMenuButton
+                            tooltip={item.title}
+                            key={item.title}
+                            className={
+                              item.url === "/"
+                                ? pathname === "/"
+                                  ? "bg-primary/10 text-gray-800"
+                                  : "opacity-70"
+                                : pathname.startsWith(item.url)
+                                  ? "bg-primary/10 text-gray-800"
+                                  : "opacity-70"
+                            }
+                            asChild
                           >
-                            {item.icon && (
-                              <item.icon className="pointer-events-none h-4 w-4" />
-                            )}
-                            <div className="flex grow flex-row items-center justify-between">
-                              <span className="whitespace-nowrap">
-                                {item.title}
-                              </span>
-                              {differenceInDays(new Date(), item.addedDate) <=
-                                30 && (
-                                <Badge className="rounded-full border border-primary/30 bg-primary/15 px-2 py-0 text-[0.5rem] text-primary">
-                                  New
-                                </Badge>
+                            <Link
+                              to={item.url}
+                              className="flex flex-row items-center px-4 py-2.5"
+                            >
+                              {item.icon && (
+                                <item.icon className="pointer-events-none h-4 w-4" />
                               )}
-                            </div>
-                          </Link>
-                        </SidebarMenuButton>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </Collapsible>
-              </SidebarGroup>
-            );
-          })}
+                              <div className="flex grow flex-row items-center justify-between">
+                                <span className="whitespace-nowrap">
+                                  {item.title}
+                                </span>
+                                {differenceInDays(new Date(), item.addedDate) <=
+                                  30 && (
+                                  <Badge className="rounded-full border border-primary/30 bg-primary/15 px-2 py-0 text-[0.5rem] text-primary">
+                                    New
+                                  </Badge>
+                                )}
+                              </div>
+                            </Link>
+                          </SidebarMenuButton>
+                        ))}
+                      </SidebarMenu>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarGroup>
+              );
+            })}
           {isAdmin(user) && (
             <SidebarGroup>
               <Collapsible defaultOpen={false}>

@@ -15,6 +15,7 @@ import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -42,8 +43,26 @@ export default function PaymentTypeForm({
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
       imagePath: initialData?.imagePath ?? "",
+      accountNo: initialData?.accountNo ?? "",
+      commission: initialData?.commission ?? 0,
+      displayName: initialData?.displayName ?? "",
+      showQR: initialData?.showQR ?? false,
+      showValue: initialData?.showValue ?? false,
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      name: initialData?.name ?? "",
+      description: initialData?.description ?? "",
+      imagePath: initialData?.imagePath ?? "",
+      accountNo: initialData?.accountNo ?? "",
+      commission: initialData?.commission ?? 0,
+      displayName: initialData?.displayName ?? "",
+      showQR: initialData?.showQR ?? false,
+      showValue: initialData?.showValue ?? false,
+    });
+  }, [initialData]);
 
   const { handleSubmit, control, formState } = form;
   const isLoading = formState.isSubmitting;
@@ -153,6 +172,20 @@ export default function PaymentTypeForm({
           )}
         />
 
+        <FormField
+          control={control}
+          name="qrPath"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>QR Code</FormLabel>
+              <FormControl>
+                <ImageButton value={field.value} setValue={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Account No (Optional) */}
         <FormField
           control={control}
@@ -187,6 +220,7 @@ export default function PaymentTypeForm({
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                   disabled={isLoading}
+                  onWheelCapture={(e) => e.currentTarget.blur()}
                 />
               </FormControl>
               <FormMessage />

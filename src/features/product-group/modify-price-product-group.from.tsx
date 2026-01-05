@@ -80,7 +80,12 @@ export default function ModifyProductGroupForm({
             <FormItem>
               <FormLabel>Value</FormLabel>
               <FormControl>
-                <Input type="number" {...field} disabled={isLoading} />
+                <Input
+                  type="number"
+                  {...field}
+                  disabled={isLoading}
+                  onWheelCapture={(e) => e.currentTarget.blur()}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

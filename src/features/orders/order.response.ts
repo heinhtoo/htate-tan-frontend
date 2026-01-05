@@ -3,6 +3,7 @@ export type OrderItemResponse = {
   productId: number;
   productName: string;
   productSKU: string;
+  productImage: string;
   quantity: number;
   unitPrice: number;
   discountAmount: number;

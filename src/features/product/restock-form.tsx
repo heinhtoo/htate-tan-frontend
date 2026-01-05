@@ -141,6 +141,7 @@ export default function RestockForm({
                     field.onChange(parseInt(e.target.value) || 0)
                   }
                   disabled={isLoading}
+                  onWheelCapture={(e) => e.currentTarget.blur()}
                 />
               </FormControl>
               <FormMessage />
@@ -162,6 +163,7 @@ export default function RestockForm({
                     placeholder="0.00"
                     {...field}
                     disabled={isLoading}
+                    onWheelCapture={(e) => e.currentTarget.blur()}
                   />
                 </FormControl>
                 <FormMessage />
@@ -211,6 +213,7 @@ export default function RestockForm({
                   placeholder="0.00"
                   {...field}
                   disabled={isLoading}
+                  onWheelCapture={(e) => e.currentTarget.blur()}
                 />
               </FormControl>
               <FormMessage />

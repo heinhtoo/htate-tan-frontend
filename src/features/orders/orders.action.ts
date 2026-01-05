@@ -107,16 +107,39 @@ async function updateOrderFn({
       discountAmount: number;
     }[];
     otherCharges: {
+      id?: number;
       otherOrderChargeId?: number;
       otherChargeId: number;
       amount: number;
     }[];
+    payment: {
+      paymentId?: number;
+      paymentMethodId: number;
+      amount: number;
+      referenceId?: string | undefined;
+      name: string;
+    }[];
   };
 }) {
+  console.log(data);
   const response = await axiosClientInstance.put<APIResponse<OrderResponse>>(
     "/common/pos/" + id,
     addExtraData({
       ...data,
+      otherCharges: data.otherCharges?.map((item) => {
+        return {
+          otherChargeId: item.otherChargeId,
+          amount: item.amount,
+        };
+      }),
+      payment: data.payment.map((item) => {
+        return {
+          paymentId: item.paymentId,
+          paymentMethodId: item.paymentMethodId,
+          amount: item.amount,
+          referenceId: item.referenceId,
+        };
+      }),
     })
   );
 

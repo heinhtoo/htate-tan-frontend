@@ -1,25 +1,28 @@
+import { useApiConfigStore } from "@/store/apiConfigStore";
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 // Create an instance
 const axiosClientInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND + "/api/rest/v1",
   withCredentials: true,
 });
 
-// Add an interceptor
 axiosClientInstance.interceptors.request.use(
-  async (config) => {
+  (config) => {
+    // Dynamically override baseURL
+    const { baseURL } = useApiConfigStore.getState();
+    config.baseURL = baseURL + "/api/rest/v1";
+    console.log(config.baseURL);
+    // Set Authorization if accessToken exists
     const authState = useAuthStore.getState();
-    const accessToken = authState.accessToken;
-
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    if (authState.accessToken) {
+      config.headers.Authorization = `Bearer ${authState.accessToken}`;
     }
 
     return config;
   },
   (error) => {
+    // Handle request errors
     if (axios.isAxiosError(error)) {
       console.error("Axios Error:", error.response?.data || error.message);
       return Promise.reject(
@@ -33,14 +36,16 @@ axiosClientInstance.interceptors.request.use(
   }
 );
 
+// Response interceptor
 axiosClientInstance.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.status === 401) {
+  (error) => {
+    // Correct check for 401
+    if (error.response?.status === 401) {
       const authState = useAuthStore.getState();
       authState.setAccessToken("");
     }
-    // Re-throw other errors
+
     return Promise.reject(error);
   }
 );

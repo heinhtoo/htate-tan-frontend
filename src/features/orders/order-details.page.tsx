@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle2,
   ChevronLeft,
+  Coins,
+  CreditCard,
+  Package,
   Plus,
   Printer,
+  Receipt,
   Save,
   Trash2,
   Truck,
@@ -18,7 +21,7 @@ import { Link, useParams } from "react-router-dom";
 import PaymentTypeDropdown from "@/components/dropdown/payment-type.dropdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -29,66 +32,61 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { getCarGates } from "../car-gate/car-gate.action";
-import { cancelPOSOrder, confirmPOSOrder } from "../pos/pos.action";
 import { getOrderDetails, updateOrder } from "./orders.action";
 import { getStatusConfig } from "./orders.page";
 
+import OtherChargeDropdown from "@/components/dropdown/other-charge.dropdown";
 import { PYIDAUNGSU_BASE64 } from "@/lib/textHelper";
+import { useErrorStore } from "@/store/error.store";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { cancelPOSOrder } from "../pos/pos.action";
 
 export default function OrderDetailsPage() {
   const { slug } = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order } = useQuery({
     queryKey: ["order-details", slug],
     queryFn: () => getOrderDetails({ slug: slug ?? "" }),
   });
 
   const orderData = order?.response?.data;
 
-  // 1. Initialize Form
+  // TODO add other charges
+
+  // Initialize Form
   const form = useForm({
     values: {
       carGateId: orderData?.carGate?.id,
       remark: orderData?.remark || "",
       totalAdditionalDiscountAmount: orderData?.totals?.additionalDiscount || 0,
-      items:
-        orderData?.items.map((item) => ({
-          id: item.id, // The OrderItem ID
-          productId: item.productId,
-          productSKU: item.productSKU,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discountAmount: item.discountAmount,
-        })) || [],
-      payments:
-        orderData?.payments.map((p) => ({
-          paymentId: p.id,
-          amount: p.amount,
-          referenceId: p.referenceId,
-          paymentMethodId: p.typeId || -1, // Default or existing
-        })) || [],
+      items: orderData?.items || [],
+      payments: orderData?.payments
+        ? orderData.payments.map((item) => {
+            return {
+              referenceId: item.referenceId,
+              amount: item.amount,
+              paymentMethodId: item.typeId,
+            };
+          })
+        : [],
+      otherCharges: orderData?.otherCharges ? orderData.otherCharges : [],
     },
-  });
-
-  const {
-    fields: paymentFields,
-    append: appendPayment,
-    remove: removePayment,
-  } = useFieldArray({
-    control: form.control,
-    name: "payments",
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
   });
+  const {
+    fields: paymentFields,
+    append: appendPayment,
+    remove: removePayment,
+  } = useFieldArray({ control: form.control, name: "payments" });
 
   const { data: CAR_GATES } = useQuery({
     queryKey: ["car-gate-all"],
@@ -98,90 +96,89 @@ export default function OrderDetailsPage() {
       ),
   });
 
+  const {
+    fields: otherChargesField,
+    append: appendOtherCharge,
+    remove: removeOtherCharge,
+  } = useFieldArray({ control: form.control, name: "otherCharges" });
+
   const watchedItems = form.watch("items");
   const watchedDiscount = form.watch("totalAdditionalDiscountAmount");
-
   const watchedPayments = form.watch("payments");
-  const totalPaid = useMemo(() => {
-    return watchedPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  }, [watchedPayments]);
+  const watchedOtherCharges = form.watch("otherCharges");
 
+  const totalPaid = useMemo(
+    () => watchedPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0),
+    [watchedPayments]
+  );
   const calculatedPayable = useMemo(() => {
-    const subtotal = watchedItems.reduce((acc, curr) => {
-      const qty = Number(curr.quantity) || 0;
-      const price = Number(curr.unitPrice) || 0;
-      const disc = Number(curr.discountAmount) || 0;
-      return acc + qty * (price - disc);
-    }, 0);
+    const subtotal = watchedItems.reduce(
+      (acc, curr) =>
+        acc + curr.quantity * (curr.unitPrice - (curr.discountAmount || 0)),
+      0
+    );
 
-    const otherCharges = orderData?.totals?.otherCharges || 0;
-    const globalDisc = Number(watchedDiscount) || 0;
+    // Calculate total from other charges fields
+    const otherChargesTotal = (watchedOtherCharges || []).reduce(
+      (acc, curr) => acc + (Number(curr.amount) || 0),
+      0
+    );
 
-    return subtotal + otherCharges - globalDisc;
-  }, [watchedItems, watchedDiscount, orderData]);
+    return subtotal + otherChargesTotal - Number(watchedDiscount || 0);
+  }, [watchedItems, watchedDiscount, watchedOtherCharges]);
+  const { setError } = useErrorStore();
 
-  // 2. Mutation Logic
+  // Mutations (Logic kept same as your snippet)
   const updateMutation = useMutation({
-    mutationFn: (payload: any) =>
-      updateOrder({
-        id: orderData!.id,
-        data: payload,
-      }),
-    onSuccess: () => {
-      setIsEditMode(false);
-      queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
+    mutationFn: (values: any) => {
+      // Logic to calculate DTO requirements (created, updated, removed)
+      const originalItems = orderData?.items || [];
+      const payload = {
+        carGateId: values.carGateId,
+        remark: values.remark,
+        totalAdditionalDiscountAmount: values.totalAdditionalDiscountAmount,
+
+        // Items that exist in original but not in current fields
+        removedItems: originalItems
+          .filter(
+            (orig) => !values.items.find((curr: any) => curr.id === orig.id)
+          )
+          .map((i) => ({ productId: i.productId })),
+
+        // Items with an ID that exist in both (check for changes)
+        updatedItems: values.items
+          .filter((curr: any) => curr.id)
+          .map((curr: any) => ({
+            orderItemId: curr.id,
+            quantity: Number(curr.quantity),
+            unitPrice: Number(curr.unitPrice),
+            discountAmount: Number(curr.discountAmount),
+          })),
+
+        // Items with no ID are new
+        createdItems: values.items
+          .filter((curr: any) => !curr.id)
+          .map((curr: any) => ({
+            productId: curr.productId,
+            quantity: Number(curr.quantity),
+            unitPrice: Number(curr.unitPrice),
+          })),
+
+        otherCharges: values.otherCharges.map((oc: any) => ({
+          otherChargeId: oc.otherChargeId,
+          amount: Number(oc.amount),
+        })),
+        payment: values.payments,
+      };
+      return updateOrder({ id: orderData!.id, data: payload as any });
     },
-  });
-
-  const handleSave = form.handleSubmit((values) => {
-    // Logic to calculate DTO requirements (created, updated, removed)
-    const originalItems = orderData?.items || [];
-
-    const payload = {
-      carGateId: values.carGateId,
-      remark: values.remark,
-      totalAdditionalDiscountAmount: values.totalAdditionalDiscountAmount,
-
-      // Items that exist in original but not in current fields
-      removedItems: originalItems
-        .filter((orig) => !values.items.find((curr) => curr.id === orig.id))
-        .map((i) => ({ productId: i.productId })),
-
-      // Items with an ID that exist in both (check for changes)
-      updatedItems: values.items
-        .filter((curr) => curr.id)
-        .map((curr) => ({
-          orderItemId: curr.id,
-          quantity: Number(curr.quantity),
-          unitPrice: Number(curr.unitPrice),
-          discountAmount: Number(curr.discountAmount),
-        })),
-
-      // Items with no ID are new
-      createdItems: values.items
-        .filter((curr) => !curr.id)
-        .map((curr) => ({
-          productId: curr.productId,
-          quantity: Number(curr.quantity),
-          unitPrice: Number(curr.unitPrice),
-        })),
-
-      otherCharges: orderData?.otherCharges, // Keeping current charges
-    };
-
-    updateMutation.mutate(payload);
-  });
-
-  const confirmMutation = useMutation({
-    mutationFn: (payload: any) =>
-      confirmPOSOrder({
-        id: orderData!.id,
-        data: payload,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
-      setIsEditMode(false);
-      // Add a success toast here if you have one
+    onSuccess: (payload) => {
+      if (payload.error) {
+        setError(payload.error as any);
+      } else {
+        setIsEditMode(false);
+        queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
+      }
     },
   });
 
@@ -190,28 +187,23 @@ export default function OrderDetailsPage() {
       cancelPOSOrder({
         id: orderData!.id,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
-      setIsEditMode(false);
+    onSuccess: (payload) => {
+      if (payload.error) {
+        setError(payload.error as any);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
+        setIsEditMode(false);
+      }
       // Add a success toast here if you have one
     },
-  });
-
-  const handleConfirm = form.handleSubmit((values) => {
-    const payload = {
-      payment: values.payments.map((p) => ({
-        paymentId: p.paymentId,
-        amount: Number(p.amount),
-        referenceId: p.referenceId,
-        paymentMethodId: p.paymentMethodId,
-      })),
-    };
-    confirmMutation.mutate(payload);
   });
 
   const handleCancel = () => {
     cancelMutation.mutate();
   };
+
+  const isPending = updateMutation.isPending || cancelMutation.isPending;
+  const status = getStatusConfig(orderData?.status ?? "");
 
   const handlePrint = () => {
     // Define custom size: [width, height] in mm
@@ -319,205 +311,193 @@ export default function OrderDetailsPage() {
     window.open(blobURL, "_blank");
   };
 
-  const isPending =
-    updateMutation.isPending ||
-    confirmMutation.isPending ||
-    cancelMutation.isPending;
-
-  if (isLoading)
-    return <div className="p-10 text-center font-bold">Loading...</div>;
-  const status = getStatusConfig(orderData?.status ?? "");
-
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      {/* Header Actions */}
-      <div className="sticky top-0 z-30 bg-white border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/orders">
-              <ChevronLeft />
-            </Link>
-          </Button>
-          <h1 className="text-xl font-black flex flex-row items-center gap-3">
-            Order #{orderData?.id}
-            <Badge
-              className={`rounded-md px-2 py-0.5 border shadow-none font-bold text-[9px] uppercase mx-auto flex items-center gap-1 w-fit ${status.color}`}
+    <div className="min-h-screen bg-slate-50/50 pb-20 lg:pb-10 overflow-y-auto">
+      {/* --- Sticky Header --- */}
+      <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/orders"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
-              {status.icon} {orderData?.status}
-            </Badge>
-          </h1>
+              <ChevronLeft size={20} />
+            </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm lg:text-lg font-bold text-slate-900">
+                  Order #{orderData?.id}
+                </h1>
+                <Badge
+                  className={cn(
+                    "text-[10px] px-2 py-0 border-none shadow-none",
+                    status.color
+                  )}
+                >
+                  {orderData?.status}
+                </Badge>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+                Created on{" "}
+                {orderData?.createdAt
+                  ? new Date(orderData?.createdAt).toLocaleDateString()
+                  : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isEditMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="hidden sm:flex gap-2"
+                >
+                  <Printer size={16} /> Print
+                </Button>
+                {orderData?.status !== "Success" && (
+                  <Button
+                    size="sm"
+                    onClick={() => setIsEditMode(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100"
+                  >
+                    Edit & Pay
+                  </Button>
+                )}
+              </>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditMode(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size={"sm"}
+                  onClick={handleCancel}
+                  disabled={isPending}
+                  className="bg-red-600 hover:bg-red-700 font-bold gap-2"
+                >
+                  {cancelMutation.isPending ? (
+                    "Cancelling..."
+                  ) : (
+                    <>
+                      <XIcon className="w-4 h-4" /> Cancel
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => updateMutation.mutate(form.getValues())}
+                  disabled={isPending}
+                >
+                  <Save size={16} className="mr-2" /> Save
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
+      </header>
 
-        <div className="flex gap-2">
-          {isEditMode ? (
-            <>
-              <Button
-                variant="ghost"
-                onClick={() => setIsEditMode(false)}
-                disabled={isPending}
-              >
-                Cancel
-              </Button>
-
-              {/* Save Button: Just updates Order details/items */}
-              <Button
-                onClick={handleSave}
-                disabled={isPending}
-                className="bg-slate-900 hover:bg-slate-800 font-bold gap-2 text-white"
-              >
-                {updateMutation.isPending ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" /> Save Details
-                  </>
-                )}
-              </Button>
-
-              {/* Process Button: Finalizes the order with payments */}
-              <Button
-                onClick={handleConfirm}
-                disabled={isPending}
-                className="bg-emerald-600 hover:bg-emerald-700 font-bold gap-2"
-              >
-                {confirmMutation.isPending ? (
-                  "Confirming..."
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" /> Confirmation
-                  </>
-                )}
-              </Button>
-
-              <Button
-                onClick={handleCancel}
-                disabled={isPending}
-                className="bg-red-600 hover:bg-red-700 font-bold gap-2"
-              >
-                {cancelMutation.isPending ? (
-                  "Cancelling..."
-                ) : (
-                  <>
-                    <XIcon className="w-4 h-4" /> Cancel
-                  </>
-                )}
-              </Button>
-            </>
-          ) : (
-            orderData?.status !== "success" && (
-              <Button
-                onClick={() => setIsEditMode(true)}
-                className="bg-slate-900 font-bold"
-              >
-                Edit & Pay
-              </Button>
-            )
-          )}
-          <Button onClick={handlePrint}>
-            <Printer />
-            Print
-          </Button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6 max-h-[75vh] overflow-y-auto">
-          {/* Main Items Card */}
-          <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-white py-0">
-            <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
-              <span className="text-xs font-black uppercase text-slate-400">
-                Order Contents
-              </span>
+      <div className="max-w-7xl mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* --- Left Column: Items & Payments --- */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Order Contents */}
+          <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white pt-3">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package size={18} className="text-slate-400" />
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                  Order Contents
+                </h2>
+              </div>
               {isEditMode && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-xl border-dashed"
+                  className="rounded-full text-indigo-600 border-indigo-100"
                   onClick={() =>
                     append({
-                      productId: 0,
-                      productName: "New Product",
+                      productName: "New Item",
                       quantity: 1,
                       unitPrice: 0,
-                      discountAmount: 0,
                     } as any)
                   }
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Item
+                  <Plus size={14} className="mr-1" /> Add
                 </Button>
               )}
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 border-b">
+              {/* Desktop Table */}
+              <table className="w-full hidden md:table">
+                <thead className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase border-b">
                   <tr>
-                    <th className="px-6 py-3 text-left">Code</th>
                     <th className="px-6 py-3 text-left">Product</th>
                     <th className="px-6 py-3 text-center w-24">Qty</th>
-                    <th className="px-6 py-3 text-right">Unit Price</th>
+                    <th className="px-6 py-3 text-right">Price</th>
                     <th className="px-6 py-3 text-right">Total</th>
-                    {isEditMode && <th className="px-6 py-3"></th>}
+                    {isEditMode && <th className="px-4"></th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-slate-50">
                   {fields.map((field, index) => (
-                    <tr key={field.id} className="text-sm">
+                    <tr
+                      key={field.id}
+                      className="group hover:bg-slate-50/30 transition-colors"
+                    >
                       <td className="px-6 py-4">
-                        {isEditMode && !field.id ? (
-                          <Input
-                            placeholder="Search product..."
-                            className="h-8 text-xs"
+                        <div className="flex flex-row items-center gap-3">
+                          <img
+                            src={field.productImage}
+                            className="w-14 h-14 max-w-14 max-h-14"
                           />
-                        ) : (
-                          <p className="font-bold text-slate-700">
-                            {field.productSKU}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {isEditMode && !field.id ? (
-                          <Input
-                            placeholder="Search product..."
-                            className="h-8 text-xs"
-                          />
-                        ) : (
-                          <p className="font-bold text-slate-700">
-                            {field.productName}
-                          </p>
-                        )}
+                          <div>
+                            <p className="font-semibold text-slate-800">
+                              {field.productName}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-mono">
+                              {field.productSKU}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <Input
                           type="number"
                           disabled={!isEditMode}
-                          {...form.register(`items.${index}.quantity` as const)}
-                          className="h-8 text-center font-bold disabled:bg-transparent disabled:border-none"
+                          {...form.register(`items.${index}.quantity`)}
+                          className="h-8 text-center font-bold bg-transparent border-slate-200 focus:bg-white"
+                          onWheelCapture={(e) => e.currentTarget.blur()}
                         />
                       </td>
                       <td className="px-6 py-4">
                         <Input
                           type="number"
                           disabled={!isEditMode}
-                          {...form.register(
-                            `items.${index}.unitPrice` as const
-                          )}
-                          className="h-8 text-right font-bold disabled:bg-transparent disabled:border-none"
+                          {...form.register(`items.${index}.unitPrice`)}
+                          className="h-8 text-right font-bold bg-transparent border-slate-200 focus:bg-white"
+                          onWheelCapture={(e) => e.currentTarget.blur()}
                         />
                       </td>
-                      <td className="px-6 py-4 text-right font-black">
+                      <td className="px-6 py-4 text-right font-bold text-slate-900">
                         {(
                           form.watch(`items.${index}.quantity`) *
                           form.watch(`items.${index}.unitPrice`)
                         ).toLocaleString()}
                       </td>
                       {isEditMode && (
-                        <td className="px-6 py-4">
+                        <td className="px-4">
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => remove(index)}
-                            className="text-rose-500"
+                            className="text-slate-300 hover:text-rose-500 transition-colors"
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -527,131 +507,249 @@ export default function OrderDetailsPage() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Mobile Card List */}
+              <div className="md:hidden divide-y">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-slate-800">
+                          {field.productName}
+                        </p>
+                        <p className="text-[10px] font-mono text-slate-400">
+                          {field.productSKU}
+                        </p>
+                      </div>
+                      {isEditMode && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="text-rose-500 h-8 w-8 p-0"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">
+                          Qty
+                        </span>
+                        <Input
+                          type="number"
+                          disabled={!isEditMode}
+                          {...form.register(`items.${index}.quantity`)}
+                          className="h-9"
+                          onWheelCapture={(e) => e.currentTarget.blur()}
+                        />
+                      </div>
+                      <div className="space-y-1 text-right">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">
+                          Unit Price
+                        </span>
+                        <Input
+                          type="number"
+                          disabled={!isEditMode}
+                          {...form.register(`items.${index}.unitPrice`)}
+                          className="h-9 text-right"
+                          onWheelCapture={(e) => e.currentTarget.blur()}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
 
-          {/* Remarks Section */}
-          <Card className="rounded-3xl border-none shadow-sm p-6">
-            <span className="text-[10px] font-black uppercase text-slate-400 mb-2 block">
-              Order Remark
-            </span>
-            <Textarea
-              disabled={!isEditMode}
-              {...form.register("remark")}
-              placeholder="Add internal notes about this order..."
-              className="rounded-2xl border-slate-100 disabled:opacity-100 disabled:bg-transparent"
-            />
+          {/* Other Charge */}
+          <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white pt-3">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins size={18} className="text-slate-400" />
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                  Other Charges
+                </h2>
+              </div>
+              {isEditMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full text-indigo-600 border-indigo-100"
+                  onClick={() =>
+                    appendOtherCharge({
+                      amount: 0,
+                      otherChargeId: 0,
+                      name: "",
+                    } as any)
+                  }
+                >
+                  <Plus size={14} className="mr-1" /> Add Charge
+                </Button>
+              )}
+            </div>
+            <div className="p-0">
+              {otherChargesField.length === 0 && (
+                <div className="p-8 text-center text-slate-400 text-xs italic">
+                  No additional charges added.
+                </div>
+              )}
+              {otherChargesField.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="flex flex-col md:flex-row gap-4 p-4 border-b last:border-0 items-end md:items-center animate-in fade-in"
+                >
+                  <div className="w-full md:flex-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block md:hidden">
+                      Charge Type
+                    </label>
+                    <OtherChargeDropdown
+                      disabled={!isEditMode}
+                      value={form.watch(
+                        `otherCharges.${index}.otherChargeId` as any
+                      )}
+                      setValue={(value) => {
+                        form.setValue(
+                          `otherCharges.${index}.otherChargeId` as any,
+                          value
+                        );
+                      }}
+                    />
+                  </div>
+                  <div className="w-full md:w-48">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block md:hidden">
+                      Amount
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        disabled={!isEditMode}
+                        {...form.register(`otherCharges.${index}.amount`)}
+                        className="h-9 text-right font-bold pr-8"
+                        onWheelCapture={(e) => e.currentTarget.blur()}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
+                        Ks
+                      </span>
+                    </div>
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeOtherCharge(index)}
+                      className="text-slate-300 hover:text-rose-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
           </Card>
 
-          <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-white py-0">
-            <div className="p-6 border-b bg-slate-50/50 flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-slate-400">
-                Transaction History
-              </span>
+          {/* Transaction Card */}
+          <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white pt-3">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard size={18} className="text-slate-400" />
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                  Payments
+                </h2>
+              </div>
               {isEditMode && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    appendPayment({
-                      amount: 0,
-                      referenceId: "",
-                      paymentMethodId: 1,
-                    } as any)
+                    appendPayment({ amount: 0, paymentMethodId: 1 } as any)
                   }
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Payment
+                  Add Payment
                 </Button>
               )}
             </div>
-            <CardContent className="p-0">
-              <table className="w-full">
-                <thead className="bg-slate-50/50 text-[9px] font-black uppercase text-slate-400 border-b">
-                  <tr>
-                    <th className="px-6 py-3 text-left min-w-[200px]">
-                      Method
-                    </th>
-                    <th className="px-6 py-3 text-left">Reference</th>
-                    <th className="px-6 py-3 text-right">Amount</th>
-                    {isEditMode && <th className="w-10"></th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {paymentFields.map((field, index) => (
-                    <tr key={field.id} className="text-xs">
-                      <td className="px-6 py-4">
-                        <PaymentTypeDropdown
-                          value={form.watch(
-                            `payments.${index}.paymentMethodId`
-                          )}
-                          setValue={(value) => {
-                            form.setValue(
-                              `payments.${index}.paymentMethodId`,
-                              value
-                            );
-                          }}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <Input
-                          disabled={!isEditMode}
-                          {...form.register(`payments.${index}.referenceId`)}
-                          className="h-8"
-                          placeholder="Check/Transfer ID"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <Input
-                          type="number"
-                          disabled={!isEditMode}
-                          {...form.register(`payments.${index}.amount`)}
-                          className="h-8 text-right font-bold"
-                        />
-                      </td>
-                      {isEditMode && (
-                        <td className="px-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removePayment(index)}
-                            className="text-rose-500"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </td>
+            <div className="p-0">
+              {paymentFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="flex flex-col md:flex-row gap-4 p-4 border-b last:border-0 items-end md:items-center"
+                >
+                  <div className="w-full md:flex-1">
+                    <PaymentTypeDropdown
+                      value={form.watch(
+                        `payments.${index}.paymentMethodId` as any
                       )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
+                      setValue={(value) => {
+                        form.setValue(
+                          `payments.${index}.paymentMethodId` as any,
+                          value
+                        );
+                      }}
+                    />
+                  </div>
+                  <div className="w-full md:flex-1">
+                    <Input
+                      disabled={!isEditMode}
+                      {...form.register(`payments.${index}.referenceId`)}
+                      placeholder="Reference #"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="w-full md:w-40">
+                    <Input
+                      type="number"
+                      disabled={!isEditMode}
+                      {...form.register(`payments.${index}.amount`)}
+                      className="h-9 text-right font-bold"
+                      onWheelCapture={(e) => e.currentTarget.blur()}
+                    />
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removePayment(index)}
+                      className="text-rose-500"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
           </Card>
         </div>
 
-        {/* Sidebar: Customer & Logistics */}
-        <div className="space-y-6">
-          <Card className="rounded-3xl border-none shadow-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+        {/* --- Right Column: Summary & Sidebar --- */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Customer & Logistics */}
+          <Card className="border-none shadow-sm rounded-2xl p-5 space-y-5 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
                 <User size={20} />
               </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-black uppercase text-slate-400">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
                   Customer
                 </p>
-                <p className="text-sm font-bold">
+                <p className="text-sm font-bold text-slate-800">
                   {orderData?.customer?.name || "Walk-in"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+            <Separator className="bg-slate-50" />
+
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                 <Truck size={20} />
               </div>
               <div className="flex-1">
-                <p className="text-[10px] font-black uppercase text-slate-400">
-                  Car Gate
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                  Logistics / Gate
                 </p>
                 {isEditMode ? (
                   <Select
@@ -659,7 +757,7 @@ export default function OrderDetailsPage() {
                       form.setValue("carGateId", parseInt(v))
                     }
                   >
-                    <SelectTrigger className="rounded-xl h-10 bg-slate-50 border-slate-200">
+                    <SelectTrigger className="mt-1 h-9 rounded-lg border-slate-200">
                       <SelectValue placeholder="Select Gate" />
                     </SelectTrigger>
                     <SelectContent>
@@ -671,38 +769,38 @@ export default function OrderDetailsPage() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-sm font-bold">
-                    {orderData?.carGate?.name || "No Gate Assigned"}
+                  <p className="text-sm font-bold text-slate-800">
+                    {orderData?.carGate?.name || "Standard Shipping"}
                   </p>
                 )}
               </div>
             </div>
           </Card>
 
-          {/* Pricing Sidebar */}
-          <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-200 text-primary p-8 relative overflow-hidden">
-            {/* Decorative Background Element */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
+          {/* Pricing Summary */}
+          <Card className="border-none shadow-lg rounded-[2rem] bg-slate-900 text-white p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-[60px]" />
 
             <div className="relative z-10 space-y-6">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                  Total Payable
+              <div className="flex items-center gap-2 text-slate-400">
+                <Receipt size={16} />
+                <span className="text-[11px] font-bold uppercase tracking-widest">
+                  Grand Total
                 </span>
-                <div className="text-4xl font-black text-primary mt-2">
-                  {calculatedPayable.toLocaleString()}{" "}
-                  <span className="text-sm">Ks</span>
-                </div>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-white/5">
-                <div className="flex justify-between text-xs font-bold text-slate-400">
-                  <span>Items Subtotal</span>
+              <div className="text-5xl font-black tracking-tighter">
+                {calculatedPayable.toLocaleString()}
+                <span className="text-xl ml-2 font-medium opacity-50">Ks</span>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="flex justify-between text-xs font-medium text-slate-400">
+                  <span>Subtotal</span>
                   <span>
                     {watchedItems
                       .reduce(
-                        (acc, curr) =>
-                          acc + Number(curr.quantity) * Number(curr.unitPrice),
+                        (acc, curr) => acc + curr.quantity * curr.unitPrice,
                         0
                       )
                       .toLocaleString()}{" "}
@@ -712,45 +810,76 @@ export default function OrderDetailsPage() {
 
                 {isEditMode ? (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-primary">
-                      Global Discount
+                    <label className="text-[10px] font-bold uppercase text-indigo-400">
+                      Adjust Discount
                     </label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        {...form.register("totalAdditionalDiscountAmount")}
-                        className="bg-white/5 border-white/10 h-10 font-black pr-10 focus:border-primary"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-black">
-                        KS
-                      </span>
-                    </div>
+                    <Input
+                      type="number"
+                      {...form.register("totalAdditionalDiscountAmount")}
+                      className="bg-white/5 border-white/10 h-10 font-bold focus:ring-indigo-500"
+                      onWheelCapture={(e) => e.currentTarget.blur()}
+                    />
                   </div>
                 ) : (
-                  <div className="flex justify-between text-xs font-bold text-rose-400">
-                    <span>Additional Discount</span>
-                    <span>- {watchedDiscount?.toLocaleString() || 0} Ks</span>
+                  <div className="flex justify-between text-xs font-medium text-rose-400">
+                    <span>Discount</span>
+                    <span>- {Number(watchedDiscount).toLocaleString()} Ks</span>
                   </div>
                 )}
-              </div>
 
-              <Separator className="bg-white/10" />
-
-              {/* Payment Status Summary */}
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500 font-bold uppercase">
-                  Balance Due
-                </span>
-                <span
-                  className={`font-black ${calculatedPayable - (orderData?.payments.reduce((s, p) => s + p.amount, 0) || 0) <= 0 ? "text-emerald-400" : "text-rose-400"}`}
-                >
-                  {(calculatedPayable - totalPaid).toLocaleString()} Ks
-                </span>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase">
+                    Balance Due
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-sm px-3 py-1 font-black",
+                      calculatedPayable - totalPaid <= 0
+                        ? "border-emerald-500 text-emerald-400"
+                        : "border-rose-500 text-rose-400"
+                    )}
+                  >
+                    {(calculatedPayable - totalPaid).toLocaleString()} Ks
+                  </Badge>
+                </div>
               </div>
             </div>
           </Card>
+
+          {/* Internal Notes */}
+          <Card className="border-none shadow-sm rounded-2xl p-6 bg-white">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+              Internal Remarks
+            </h3>
+            <Textarea
+              disabled={!isEditMode}
+              {...form.register("remark")}
+              className="resize-none text-xs border-slate-100 min-h-[100px] focus:ring-1 focus:ring-indigo-100"
+              placeholder="No internal notes..."
+            />
+          </Card>
         </div>
       </div>
+
+      {/* --- Mobile Floating Footer Actions --- */}
+      {isEditMode && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t lg:hidden flex gap-2 z-50">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setIsEditMode(false)}
+          >
+            Discard
+          </Button>
+          <Button
+            className="flex-1 bg-indigo-600 shadow-lg shadow-indigo-200"
+            onClick={() => updateMutation.mutate(form.getValues())}
+          >
+            Save Changes
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

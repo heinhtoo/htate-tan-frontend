@@ -162,6 +162,7 @@ export const UnitSelectionSheet = ({
                 className="w-24 text-center h-10 text-lg font-bold"
                 min={1}
                 disabled={isSubmitting}
+                onWheelCapture={(e) => e.currentTarget.blur()}
               />
               <Button
                 variant="outline"

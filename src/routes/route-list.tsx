@@ -22,8 +22,10 @@ import ProductDetailsPage from "@/features/product/product-details.page";
 import ProductPage from "@/features/product/product.page";
 import { getProfile } from "@/features/profile/profile.action";
 import Wrapper from "@/features/providers/Wrapper";
+import PurchasePage from "@/features/purchase/purchase.page";
 import SettingPage from "@/features/setting/setting.page";
 import StaffPage from "@/features/staff/staff.page";
+import SupplierPage from "@/features/supplier/supplier.page";
 import UnitConversionPage from "@/features/unit-conversion/unit-conversion.page";
 import WarehousePage from "@/features/warehouse/warehouse.page";
 import AppLayout from "@/layout/app-layout";
@@ -137,10 +139,9 @@ function RouteList() {
               <Route path="warehouses" element={<WarehousePage />} />
 
               {/* Purchasing & Suppliers Routes */}
-              {/* 
-            <Route path="purchases" element={<PurchasesPage />} />
-            <Route path="suppliers" element={<SupplierPage />} /> 
-            */}
+
+              <Route path="purchase" element={<PurchasePage />} />
+              <Route path="suppliers" element={<SupplierPage />} />
 
               {/* People & Loyalty Routes */}
               <Route path="customers" element={<CustomerPage />} />

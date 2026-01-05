@@ -126,6 +126,7 @@ export default function ProductForm({
                     type="number"
                     placeholder="0.00"
                     {...field}
+                    onWheelCapture={(e) => e.currentTarget.blur()}
                     disabled={isLoading}
                   />
                 </FormControl>
@@ -140,7 +141,12 @@ export default function ProductForm({
               <FormItem>
                 <FormLabel>Low Stock Alert</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} disabled={isLoading} />
+                  <Input
+                    type="number"
+                    {...field}
+                    disabled={isLoading}
+                    onWheelCapture={(e) => e.currentTarget.blur()}
+                  />
                 </FormControl>
                 <FormDescription className="text-xs">
                   Alert when stock dips below this.
