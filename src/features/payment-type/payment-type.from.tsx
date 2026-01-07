@@ -229,7 +229,7 @@ export default function PaymentTypeForm({
         />
 
         {/* Toggles */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {/* Show QR */}
           <FormField
             control={control}
@@ -262,7 +262,7 @@ export default function PaymentTypeForm({
                 <div className="space-y-0.5">
                   <FormLabel>Show Value</FormLabel>
                   <p className="text-sm text-muted-foreground">
-                    Show payment amount to users
+                    ပြန်အမ်းရန်ရှိပါက ယခု account ကိုအသုံးပြုမည်။
                   </p>
                 </div>
                 <FormControl>

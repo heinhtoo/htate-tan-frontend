@@ -72,4 +72,5 @@ export enum OrderStatus {
   Delivered = "Delivered",
   Pending = "Pending",
   Paid = "Paid",
+  PartialPaid = "Partial Paid",
 }

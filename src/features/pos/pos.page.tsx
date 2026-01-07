@@ -2,14 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   AlertCircle,
-  BadgeCheck,
   ChevronsUpDown,
   CreditCard,
-  FilterX,
   MessageSquare,
   Minus,
   Plus,
-  Search,
+  QrCode,
   ShoppingCart,
   Trash2,
   Truck,
@@ -17,17 +15,15 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   Command,
@@ -59,20 +55,17 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { usePanelStore } from "@/store/panelStore";
-import { getBrands } from "../brand/brand.action";
 import { getCarGates } from "../car-gate/car-gate.action";
-import { getCategories } from "../category/category.action";
 import { getCustomers } from "../customer/customer.action";
 import CustomerForm from "../customer/customer.from";
 import type { CustomerResponse } from "../customer/customer.response";
 import { getOtherCharges } from "../other-charge/other-charge.action";
 import { getPaymentTypes } from "../payment-type/payment-type.action";
-import { getProducts } from "../product/product.action";
 import type { ProductResponse } from "../product/product.response";
 import { getSetting } from "../setting/setting.action";
 import { SettingKey } from "../setting/setting.response";
+import POSProductSection from "./pos-product-section";
 import { createPOSOrder } from "./pos.action";
-import { UnitSelectionSheet } from "./unit-conversion.sheet";
 
 // --- REUSABLE CART COMPONENT ---
 const CartSection = ({
@@ -402,18 +395,13 @@ const CartSection = ({
   );
 };
 export default function PosPage() {
-  const [selectedCategory, setSelectedCategory] = useState<number>(-1);
-  const [selectedBrand, setSelectedBrand] = useState<number>(-1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
+
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerResponse | null>(null);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
-  const [selectedProductForUnit, setSelectedProductForUnit] =
-    useState<ProductResponse | null>(null);
-  const [isUnitSheetOpen, setIsUnitSheetOpen] = useState(false);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [checkoutDetails, setCheckoutDetails] = useState<{
     carGateId?: number;
@@ -428,6 +416,7 @@ export default function PosPage() {
       referenceId?: string;
       name: string;
       paymentQR: string;
+      showValue: boolean;
     }[];
     remark: string;
   }>({
@@ -460,25 +449,6 @@ export default function PosPage() {
     },
   });
 
-  const { data: PRODUCTS, refetch: refetchProducts } = useQuery({
-    queryKey: ["product-all"],
-    queryFn: () =>
-      getProducts({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
-      ),
-  });
-  const { data: CATEGORIES } = useQuery({
-    queryKey: ["categories-all"],
-    queryFn: () =>
-      getCategories({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
-      ),
-  });
-  const { data: BRANDS } = useQuery({
-    queryKey: ["brands-all"],
-    queryFn: () =>
-      getBrands({ page: "0", size: "0", s: "", q: "" }).then((r) => r.response),
-  });
   const { data: OTHER_CHARGES } = useQuery({
     queryKey: ["other-charges-all"],
     queryFn: () =>
@@ -508,18 +478,6 @@ export default function PosPage() {
         (r) => r.response
       ),
   });
-
-  const filteredProducts = useMemo(() => {
-    return PRODUCTS?.data?.filter((p) => {
-      const matchCat =
-        selectedCategory === -1 || p.category.id === selectedCategory;
-      const matchBrand = selectedBrand === -1 || p.brand.id === selectedBrand;
-      const matchSearch = p.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      return matchCat && matchBrand && matchSearch;
-    });
-  }, [PRODUCTS, selectedCategory, selectedBrand, searchQuery]);
 
   const addToCart = (
     product: ProductResponse,
@@ -569,7 +527,6 @@ export default function PosPage() {
   const grandTotal = itemTotal + otherChargesTotal;
 
   const [isLoading, startTransition] = useTransition();
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState("");
   const [selectedOtherChargeId, setSelectedOtherChargeId] = useState("");
 
   function handleCheckout() {
@@ -592,10 +549,43 @@ export default function PosPage() {
 
   async function processFinalOrder() {
     startTransition(async () => {
+      const { payment, ...checkout } = checkoutDetails;
+      const finalizedPayments = [...payment];
+      if (balance > 0) {
+        // Find the index of the account that should absorb the change (showValue: true)
+        const cashAccountIndex = finalizedPayments.findIndex(
+          (p) => p.showValue === true
+        );
+
+        if (cashAccountIndex !== -1) {
+          const currentAmount = finalizedPayments[cashAccountIndex].amount || 0;
+
+          // Subtract the change from this specific account
+          // We use Math.max(0, ...) so it doesn't go negative if something went wrong
+          finalizedPayments[cashAccountIndex] = {
+            ...finalizedPayments[cashAccountIndex],
+            amount: Math.max(0, currentAmount - balance),
+          };
+        } else {
+          // FALLBACK: If no showValue account is found, deduct from the very last payment added
+          const lastIdx = finalizedPayments.length - 1;
+          finalizedPayments[lastIdx] = {
+            ...finalizedPayments[lastIdx],
+            amount: Math.max(
+              0,
+              (finalizedPayments[lastIdx].amount || 0) - balance
+            ),
+          };
+        }
+      }
+
+      // 3. Filter out payments that became 0 (optional but cleaner)
+      const payloadPayments = finalizedPayments.filter((p) => p.amount > 0);
       const { error, response } = await createPOSOrder({
         cart,
         selectedCustomer,
-        ...checkoutDetails,
+        ...checkout,
+        payment: payloadPayments,
       });
 
       if (error) {
@@ -606,7 +596,9 @@ export default function PosPage() {
       toast.success(
         "Sale completed with order no: " + response?.result.payload.id
       );
-      refetchProducts();
+      queryClient.invalidateQueries({
+        queryKey: ["product-all"],
+      });
       refetchCustomers();
       setCart([]);
       setCheckoutDetails({
@@ -662,8 +654,6 @@ export default function PosPage() {
   };
 
   const addPaymentMethod = (methodId: string) => {
-    setSelectedPaymentMethodId("");
-
     const method = PAYMENT_METHODS?.data.find(
       (p: any) => p.id.toString() === methodId
     );
@@ -674,19 +664,22 @@ export default function PosPage() {
       return;
     }
 
-    setCheckoutDetails((prev) => ({
-      ...prev,
-      payment: [
-        ...prev.payment,
-        {
-          paymentMethodId: method.id,
-          amount: 0,
-          referenceId: "",
-          name: method.name,
-          paymentQR: method.qrPath,
-        },
-      ],
-    }));
+    const remaining = grandTotal - totalPaid; // Calculate what's left
+
+    if (method) {
+      const newPayment = {
+        paymentMethodId: method.id,
+        name: method.name,
+        amount: remaining > 0 ? remaining : 0, // Auto-fill the balance!
+        referenceId: "",
+        paymentQR: method.qrPath, // assuming it's in your data
+        showValue: method.showValue,
+      };
+      setCheckoutDetails({
+        ...checkoutDetails,
+        payment: [...checkoutDetails.payment, newPayment],
+      });
+    }
   };
 
   const updatePayment = (
@@ -718,194 +711,7 @@ export default function PosPage() {
   return (
     <>
       <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
-        <main className="flex-1 flex flex-col min-w-0">
-          <header className="bg-white p-4 space-y-4 shadow-sm z-10">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                <Input
-                  ref={searchInputRef}
-                  placeholder="Find products... (Ctrl + F)"
-                  className="pl-11 h-12 bg-slate-50 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 text-base"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              {(selectedCategory !== -1 ||
-                selectedBrand !== -1 ||
-                searchQuery) && (
-                <Button
-                  variant="ghost"
-                  className="h-12 rounded-2xl text-red-500 hover:text-red-600 hover:bg-red-50 font-bold"
-                  onClick={() => {
-                    setSelectedCategory(-1);
-                    setSelectedBrand(-1);
-                    setSearchQuery("");
-                  }}
-                >
-                  <FilterX className="h-4 w-4 mr-2" /> Reset
-                </Button>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              {/* Categories Section */}
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
-                  Category
-                </span>
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex gap-2 pb-2">
-                    <Badge
-                      variant={
-                        selectedCategory === -1 ? "default" : "secondary"
-                      }
-                      className="px-4 py-1.5 cursor-pointer rounded-full transition-all border-none"
-                      onClick={() => setSelectedCategory(-1)}
-                    >
-                      All Categories
-                    </Badge>
-                    {CATEGORIES?.data
-                      .filter((item) => {
-                        if (selectedBrand !== -1) {
-                          return filteredProducts?.find(
-                            (prod) => prod.category.id === item.id
-                          );
-                        } else {
-                          return true;
-                        }
-                      })
-                      .map((cat) => (
-                        <Badge
-                          key={cat.id}
-                          variant={
-                            selectedCategory === cat.id
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={`px-4 py-1.5 cursor-pointer rounded-full transition-all border-none ${selectedCategory === cat.id ? "shadow-lg shadow-blue-200" : ""}`}
-                          onClick={() => setSelectedCategory(cat.id)}
-                        >
-                          {cat.name}
-                        </Badge>
-                      ))}
-                  </div>
-                  <ScrollBar orientation="horizontal" className="invisible" />
-                </ScrollArea>
-              </div>
-
-              {/* Brands Section */}
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
-                  Brand
-                </span>
-                <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex gap-2 pb-2">
-                    <Badge
-                      variant={selectedBrand === -1 ? "default" : "secondary"}
-                      className="px-4 py-1.5 cursor-pointer rounded-full transition-all border-none"
-                      onClick={() => setSelectedBrand(-1)}
-                    >
-                      All Brands
-                    </Badge>
-                    {BRANDS?.data
-                      .filter((item) => {
-                        if (selectedCategory !== -1) {
-                          return filteredProducts?.find(
-                            (prod) => prod.brand.id === item.id
-                          );
-                        } else {
-                          return true;
-                        }
-                      })
-                      .map((brand) => (
-                        <Badge
-                          key={brand.id}
-                          variant={
-                            selectedBrand === brand.id ? "default" : "secondary"
-                          }
-                          className={`px-4 py-1.5 cursor-pointer rounded-full transition-all border-none ${selectedBrand === brand.id ? "shadow-lg shadow-blue-200" : ""}`}
-                          onClick={() => setSelectedBrand(brand.id)}
-                        >
-                          {brand.name}
-                        </Badge>
-                      ))}
-                  </div>
-                  <ScrollBar orientation="horizontal" className="invisible" />
-                </ScrollArea>
-              </div>
-            </div>
-          </header>
-
-          <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col">
-            <div className="px-6 pt-4 flex justify-between items-center">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                {filteredProducts?.length || 0} Products Found
-              </h2>
-            </div>
-
-            <ScrollArea className="flex-1 p-4 lg:p-6 max-h-[65vh]">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-5 pb-28 lg:pb-0">
-                {filteredProducts?.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="group p-0 flex flex-col border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer rounded-md overflow-hidden bg-white"
-                    onClick={() => {
-                      product.unitConversions?.length
-                        ? (setSelectedProductForUnit(product),
-                          setIsUnitSheetOpen(true))
-                        : addToCart(product, 1, "Unit");
-                    }}
-                  >
-                    <div className="aspect-square bg-slate-50/50 flex items-center justify-center relative">
-                      <img
-                        src={product.imagePath}
-                        className="h-full w-full object-contain group-hover:scale-110 transition-transform duration-300"
-                        alt=""
-                      />
-                      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-                        <Badge className="bg-white/80 text-slate-900 backdrop-blur-md border-none text-[9px] font-bold uppercase">
-                          {product.brand.name}
-                        </Badge>
-                        {/* Visual Stock Indicator */}
-                        <Badge
-                          className={cn(
-                            "border-none text-[9px] font-bold",
-                            product.totalCurrentStock <= 0
-                              ? "bg-red-500 text-white"
-                              : product.totalCurrentStock < 5
-                                ? "bg-orange-100 text-orange-600"
-                                : "bg-emerald-100 text-emerald-600"
-                          )}
-                        >
-                          Stock: {product.totalCurrentStock}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                      <h3 className="text-xs font-bold text-slate-800 line-clamp-2 mb-2 leading-relaxed h-8">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-end justify-between mt-auto">
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">
-                            Price
-                          </p>
-                          <p className="text-sm font-black text-primary tracking-tight">
-                            {product.price.toLocaleString()} Ks
-                          </p>
-                        </div>
-                        <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                          <Plus className="h-4 w-4" />
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        </main>
+        <POSProductSection addToCart={addToCart} />
 
         {/* DESKTOP SIDEBAR */}
         <aside className="hidden lg:flex w-[400px] flex-col bg-white border-l shadow-2xl z-20">
@@ -992,18 +798,6 @@ export default function PosPage() {
             </SheetContent>
           </Sheet>
         </div>
-
-        {selectedProductForUnit && (
-          <UnitSelectionSheet
-            product={selectedProductForUnit}
-            isOpen={isUnitSheetOpen}
-            onOpenChange={setIsUnitSheetOpen}
-            onSelectUnit={(unitName, multiplier) => {
-              addToCart(selectedProductForUnit, multiplier, unitName);
-              setSelectedProductForUnit(null);
-            }}
-          />
-        )}
       </div>
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
@@ -1141,123 +935,168 @@ export default function PosPage() {
               </div>
 
               {/* Payments Section */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-end px-1">
-                  <Label className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">
-                    Payment Methods
-                  </Label>
-                  <Select
-                    value={selectedPaymentMethodId}
-                    onValueChange={addPaymentMethod}
-                  >
-                    <SelectTrigger className="h-8 w-fit gap-2 rounded-full bg-indigo-50 border-none text-[10px] font-black px-4 text-indigo-600 hover:bg-indigo-100 transition-colors">
-                      <SelectValue placeholder="+ ADD PAYMENT" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {PAYMENT_METHODS?.data.map((method) => (
-                        <SelectItem
+              <div className="space-y-8">
+                {/* Payment Methods Selector (Visual Grid) */}
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-[11px] font-black uppercase text-indigo-500 tracking-widest">
+                      Select Payment Method
+                    </Label>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Tap a method to add to this order
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {PAYMENT_METHODS?.data.map((method) => {
+                      const isSelected = checkoutDetails.payment.some(
+                        (p) => p.paymentMethodId === method.id
+                      );
+                      return (
+                        <button
                           key={method.id}
-                          value={method.id.toString()}
+                          onClick={() => addPaymentMethod(method.id.toString())}
+                          disabled={isSelected}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 gap-2",
+                            isSelected
+                              ? "bg-indigo-50 border-indigo-200 opacity-50 cursor-not-allowed"
+                              : "bg-white border-slate-100 hover:border-indigo-400 hover:shadow-md active:scale-95"
+                          )}
                         >
-                          {method.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <div
+                            className={cn(
+                              "p-2 rounded-xl",
+                              isSelected
+                                ? "bg-indigo-200 text-indigo-600"
+                                : "bg-slate-50 text-slate-500"
+                            )}
+                          >
+                            <Wallet className="h-5 w-5" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">
+                            {method.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {checkoutDetails.payment.map((p) => (
+                {/* Active Payments List */}
+
+                {checkoutDetails.payment.map((p) => {
+                  // Logic to calculate if this specific line is the one being deducted
+                  const isDeductionTarget = p.showValue && balance > 0;
+                  const netAmount = isDeductionTarget
+                    ? p.amount - balance
+                    : p.amount;
+
+                  return (
                     <div
                       key={p.paymentMethodId}
-                      className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm space-y-3"
-                      onClick={() => {
-                        setViewingQR(p);
-                      }}
+                      className={cn(
+                        "group relative bg-white rounded-[1.5rem] border transition-all overflow-hidden",
+                        isDeductionTarget
+                          ? "border-emerald-200 shadow-md"
+                          : "border-slate-200 shadow-sm"
+                      )}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-indigo-500" />
-                          <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">
-                            {p.name}
-                          </span>
+                      {/* 1. Header with Status Pulse */}
+                      <div className="flex items-center p-4 gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "h-2 w-2 rounded-full animate-pulse",
+                                  isDeductionTarget
+                                    ? "bg-emerald-500"
+                                    : "bg-indigo-500"
+                                )}
+                              />
+                              <span className="text-xs font-black text-slate-800 uppercase">
+                                {p.name}
+                              </span>
+                              {p.showValue && (
+                                <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
+                                  CASH
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Show Deduction Badge if applicable */}
+                            {isDeductionTarget && (
+                              <div className="flex items-center gap-1.5 animate-in slide-in-from-right-2">
+                                <span className="text-[10px] font-bold text-rose-500">
+                                  -{balance.toLocaleString()} Change
+                                </span>
+                                <div className="h-4 w-[1px] bg-slate-200" />
+                                <span className="text-[10px] font-black text-emerald-600">
+                                  Net: {netAmount.toLocaleString()} Ks
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 2. Inputs */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                className={cn(
+                                  "h-10 rounded-xl border-none text-sm font-black pl-8 transition-colors",
+                                  isDeductionTarget
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-50 text-indigo-600"
+                                )}
+                                value={p.amount || ""}
+                                onChange={(e) =>
+                                  updatePayment(p.paymentMethodId, {
+                                    amount: Number(e.target.value),
+                                  })
+                                }
+                              />
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                                Ks
+                              </span>
+                            </div>
+                            <Input
+                              placeholder="Ref / Txn ID"
+                              className="h-10 rounded-xl bg-slate-50 border-none text-[11px] font-medium"
+                              value={p.referenceId || ""}
+                              onChange={(e) =>
+                                updatePayment(p.paymentMethodId, {
+                                  referenceId: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
+
+                        {/* 3. Actions */}
+                        <div className="flex flex-col gap-1 border-l border-slate-100 pl-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-slate-300 hover:text-indigo-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const paidAmount = checkoutDetails.payment.reduce(
-                                (acc, item) => {
-                                  return acc + item.paymentMethodId ===
-                                    p.paymentMethodId
-                                    ? 0
-                                    : p.amount;
-                                },
-                                0
-                              );
-                              updatePayment(p.paymentMethodId, {
-                                amount: Number(grandTotal) - paidAmount,
-                              });
-                            }}
+                            className="text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                            onClick={() => setViewingQR(p)}
                           >
-                            <BadgeCheck className="h-4 w-4" />
+                            <QrCode className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-slate-300 hover:text-rose-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removePayment(p.paymentMethodId);
-                            }}
+                            className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg"
+                            onClick={() => removePayment(p.paymentMethodId)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            placeholder="Amount"
-                            className="h-10 rounded-xl bg-slate-50 border-none text-right font-black text-indigo-600 pr-8"
-                            value={p.amount || ""}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              updatePayment(p.paymentMethodId, {
-                                amount: Number(e.target.value),
-                              });
-                            }}
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400">
-                            Ks
-                          </span>
-                        </div>
-                        <Input
-                          placeholder="Ref ID / Transaction #"
-                          className="h-10 rounded-xl bg-slate-50 border-none text-xs font-medium"
-                          value={p.referenceId || ""}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            updatePayment(p.paymentMethodId, {
-                              referenceId: e.target.value,
-                            });
-                          }}
-                        />
-                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
 

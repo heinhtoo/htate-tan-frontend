@@ -118,10 +118,10 @@ async function updateOrderFn({
       amount: number;
       referenceId?: string | undefined;
       name: string;
+      status: string;
     }[];
   };
 }) {
-  console.log(data);
   const response = await axiosClientInstance.put<APIResponse<OrderResponse>>(
     "/common/pos/" + id,
     addExtraData({
@@ -138,6 +138,7 @@ async function updateOrderFn({
           paymentMethodId: item.paymentMethodId,
           amount: item.amount,
           referenceId: item.referenceId,
+          status: item.status,
         };
       }),
     })
