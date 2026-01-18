@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { usePanelStore } from "@/store/panelStore";
 import { getCarGates } from "../car-gate/car-gate.action";
 import { getCustomers } from "../customer/customer.action";
@@ -79,10 +80,11 @@ const CartSection = ({
   handleCheckout,
   isLoading,
   refetch,
+  isCustomer,
 }: any) => {
+  const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
   // Assuming user and formatAmount are provided via context or props
-  const user = { isAdmin: true };
   const formatAmount = (num: number) => num.toLocaleString() + " Ks";
   const { openPanel } = usePanelStore();
 
@@ -114,6 +116,7 @@ const CartSection = ({
                       <CustomerForm
                         initialData={null}
                         onSubmitComplete={() => refetch()}
+                        isCustomer={isCustomer}
                       />
                     ),
                   });
@@ -394,8 +397,9 @@ const CartSection = ({
     </div>
   );
 };
-export default function PosPage() {
+export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] =
@@ -474,7 +478,7 @@ export default function PosPage() {
   const { data: CUSTOMERS, refetch: refetchCustomers } = useQuery({
     queryKey: ["customer-all"],
     queryFn: () =>
-      getCustomers({ page: "0", size: "0", s: "", q: "" }).then(
+      getCustomers({ page: "0", size: "0", s: "", q: "", isCustomer }).then(
         (r) => r.response
       ),
   });
@@ -537,7 +541,7 @@ export default function PosPage() {
       selectedCustomer.creditLimit &&
       selectedCustomer?.totalDebt > selectedCustomer?.creditLimit;
 
-    if (isOverLimit) {
+    if (isOverLimit && user?.isAdmin) {
       const proceed = window.confirm(
         "Total debt exceeds credit limit. Do you want to proceed anyway?"
       );
@@ -586,6 +590,7 @@ export default function PosPage() {
         selectedCustomer,
         ...checkout,
         payment: payloadPayments,
+        isCustomer,
       });
 
       if (error) {
@@ -729,6 +734,7 @@ export default function PosPage() {
             </Badge>
           </div>
           <CartSection
+            isCustomer={isCustomer}
             refetch={() => {
               refetchCustomers();
             }}

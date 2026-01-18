@@ -259,6 +259,7 @@ export default function OrderDetailsPage() {
         updatedItems: values.items
           .filter((curr: any) => curr.id)
           .map((curr: any) => ({
+            productId: curr.productId,
             orderItemId: curr.id,
             quantity: Number(curr.quantity),
             unitPrice: Number(curr.unitPrice),

@@ -142,8 +142,14 @@ export default function AppLayout() {
         isAdminOnly: true,
         list: [
           {
+            title: "Purchase POS",
+            url: "/purchase-pos",
+            icon: DownloadIcon,
+            addedDate: new Date(2025, 11, 1),
+          },
+          {
             title: "Purchase Orders",
-            url: "/purchase",
+            url: "/purchase-orders",
             icon: DownloadIcon,
             addedDate: new Date(2025, 11, 1),
           },

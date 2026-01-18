@@ -24,11 +24,13 @@ import { CustomerSchema } from "./customer.schema";
 interface CustomerFormProps {
   initialData: CustomerResponse | null;
   onSubmitComplete: () => void;
+  isCustomer: boolean;
 }
 
 export default function CustomerForm({
   initialData,
   onSubmitComplete,
+  isCustomer,
 }: CustomerFormProps) {
   const isEditing = !!initialData;
   const { setError } = useErrorStore();
@@ -61,7 +63,7 @@ export default function CustomerForm({
           version: initialData!.version,
           data: values,
         })
-      : createCustomer({ data: values });
+      : createCustomer({ data: values, isCustomer });
 
     const { error } = await action;
 

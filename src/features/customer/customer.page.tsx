@@ -21,27 +21,30 @@ import { usePanelStore } from "@/store/panelStore"; // Assume this is the global
 import { useQuery } from "@tanstack/react-query";
 import { Edit, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
 import { getCustomers, removeCustomer } from "./customer.action";
 import CustomerForm from "./customer.from";
 import type { CustomerResponse } from "./customer.response";
 
-export default function CustomerPage() {
+export default function CustomerPage({ isCustomer }: { isCustomer: boolean }) {
   const { openPanel } = usePanelStore();
   const [page, setPage] = useState(0);
+  const navigate = useNavigate();
 
   const [orderBy, setOrderBy] = useState("");
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 1000);
   const { data, error, refetch } = useQuery({
-    queryKey: ["customer-all", page, debouncedQuery, orderBy],
+    queryKey: ["customer-all", page, debouncedQuery, orderBy, isCustomer],
     queryFn: async () => {
       const data = await getCustomers({
         page: page ? page + "" : "0",
         size: "30",
         s: orderBy,
         q: debouncedQuery,
+        isCustomer,
       });
       if (data.response) {
         return data.response;
@@ -52,11 +55,12 @@ export default function CustomerPage() {
   });
   const handleEdit = (customer: CustomerResponse) => {
     openPanel({
-      title: `Edit Customer: ${customer.name}`,
+      title: `Edit ${isCustomer ? "Customer" : "Supplier"}: ${customer.name}`,
       content: (
         <CustomerForm
           initialData={customer}
           onSubmitComplete={() => refetch()}
+          isCustomer={isCustomer}
         />
       ),
     });
@@ -64,9 +68,13 @@ export default function CustomerPage() {
 
   const handleAdd = () => {
     openPanel({
-      title: "Create New Customer",
+      title: `Create New ${isCustomer ? "Customer" : "Supplier"}`,
       content: (
-        <CustomerForm initialData={null} onSubmitComplete={() => refetch()} />
+        <CustomerForm
+          initialData={null}
+          onSubmitComplete={() => refetch()}
+          isCustomer={isCustomer}
+        />
       ),
     });
   };
@@ -85,7 +93,8 @@ export default function CustomerPage() {
     <Card className="m-6 h-full">
       <CardHeader className="flex flex-row justify-between items-center">
         <CardTitle className="text-xl">
-          Customer ({data?.pagination?.totalItems})
+          {isCustomer ? "Customer" : "Supplier"} ({data?.pagination?.totalItems}
+          )
         </CardTitle>
         <div className="w-1/3 flex flex-row items-center gap-3">
           <Input
@@ -96,7 +105,8 @@ export default function CustomerPage() {
             }}
           />
           <Button onClick={handleAdd} className="gap-2">
-            <PlusCircle className="h-4 w-4" /> Add New Customer
+            <PlusCircle className="h-4 w-4" /> Add New
+            {isCustomer ? "Customer" : "Supplier"}
           </Button>
         </div>
       </CardHeader>
@@ -140,7 +150,7 @@ export default function CustomerPage() {
                   <TableRow
                     key={customer.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleEdit(customer)}
+                    onClick={() => navigate("/customers/" + customer.id)}
                   >
                     <TableCell>{customer.name || "-"}</TableCell>
 
@@ -276,7 +286,7 @@ export default function CustomerPage() {
                     colSpan={5}
                     className="text-center py-10 text-muted-foreground"
                   >
-                    No customer found.
+                    No {isCustomer ? "Customer" : "Supplier"} found.
                   </TableCell>
                 </TableRow>
               )}

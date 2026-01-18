@@ -53,7 +53,7 @@ export const getStatusConfig = (status: string) => {
   }
 };
 
-export default function OrdersPage() {
+export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
   const [search, setSearch] = useState("");
   const query = useDebounce(search, 400);
   const [dateFilter, setDateFilter] = useState("today");
@@ -64,20 +64,28 @@ export default function OrdersPage() {
   });
 
   const { data: statsResponse } = useQuery({
-    queryKey: ["orders-stats", dateFilter, dateRange],
+    queryKey: ["orders-stats", dateFilter, dateRange, isCustomer],
     queryFn: () =>
       getOrderStats({
         dateFilter,
         from:
           dateFilter === "custom" ? dateRange?.from?.toISOString() : undefined,
         to: dateFilter === "custom" ? dateRange?.to?.toISOString() : undefined,
+        isCustomer,
       }),
   });
   const stats = statsResponse?.response?.data;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["orders", query, dateFilter, statusFilter, dateRange],
+      queryKey: [
+        "orders",
+        query,
+        dateFilter,
+        statusFilter,
+        dateRange,
+        isCustomer,
+      ],
       queryFn: ({ pageParam }) =>
         getOrders({
           after: pageParam ?? undefined,
@@ -91,6 +99,7 @@ export default function OrdersPage() {
           to:
             dateFilter === "custom" ? dateRange?.to?.toISOString() : undefined,
           status: statusFilter === "all" ? undefined : statusFilter,
+          isCustomer,
         }),
       initialPageParam: 0,
       getNextPageParam: (lastPage) =>
@@ -325,7 +334,11 @@ export default function OrdersPage() {
                       key={order.id}
                       className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        navigate("/orders/" + order.id);
+                        if (isCustomer) {
+                          navigate("/orders/" + order.id);
+                        } else {
+                          navigate("/purchase-orders/" + order.id);
+                        }
                       }}
                     >
                       <td className="px-4 py-2.5">

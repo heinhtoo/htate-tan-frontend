@@ -23,10 +23,12 @@ function CustomerDropdown({
   value,
   setValue,
   disabled,
+  isCustomer,
 }: {
   value: string;
   setValue: (value: string) => void;
   disabled?: boolean;
+  isCustomer: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { data, error } = useQuery({
@@ -37,6 +39,7 @@ function CustomerDropdown({
         size: "0",
         s: "",
         q: "",
+        isCustomer,
       });
       if (data.response) {
         return data.response;

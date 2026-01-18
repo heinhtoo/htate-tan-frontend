@@ -12,6 +12,7 @@ async function createPOSOrderFn({
   otherCharges,
   remark,
   payment,
+  isCustomer,
 }: {
   cart: { id: number; price: number; qty: number }[];
   selectedCustomer: CustomerResponse | null;
@@ -24,9 +25,10 @@ async function createPOSOrderFn({
     referenceId?: string | undefined;
     name: string;
   }[];
+  isCustomer: boolean;
 }) {
   const response = await axiosClientInstance.post<APIResponse<OrderResponse>>(
-    "/common/pos/",
+    "/common/pos?isCustomer=" + (isCustomer ? "1" : "0"),
     addExtraData({
       items: cart.map((item) => {
         return {

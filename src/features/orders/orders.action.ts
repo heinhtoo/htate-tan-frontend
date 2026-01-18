@@ -8,10 +8,12 @@ async function getOrderStatsFn({
   dateFilter,
   from,
   to,
+  isCustomer,
 }: {
   dateFilter: string;
   from?: string;
   to?: string;
+  isCustomer: boolean;
 }) {
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.append("dateFilter", dateFilter);
@@ -21,6 +23,7 @@ async function getOrderStatsFn({
   if (to) {
     urlSearchParams.append("to", to);
   }
+  urlSearchParams.append("isCustomer", isCustomer ? "1" : "0");
   const response = await axiosClientInstance.get<
     APIViaIndexResponse<{
       totalOrders: number;
@@ -46,6 +49,7 @@ async function getOrdersFn({
   from,
   to,
   status,
+  isCustomer,
 }: {
   dateFilter: string;
   from?: string;
@@ -54,6 +58,7 @@ async function getOrdersFn({
   size: string;
   q?: string;
   status?: string;
+  isCustomer: boolean;
 }) {
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.append("dateFilter", dateFilter);
@@ -66,6 +71,8 @@ async function getOrdersFn({
   if (status) {
     urlSearchParams.append("status", status);
   }
+  urlSearchParams.append("isCustomer", isCustomer ? "1" : "0");
+
   const response = await axiosClientInstance.get<
     APIViaIndexResponse<OrderResponse[]>
   >(

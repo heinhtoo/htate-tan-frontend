@@ -22,10 +22,8 @@ import ProductDetailsPage from "@/features/product/product-details.page";
 import ProductPage from "@/features/product/product.page";
 import { getProfile } from "@/features/profile/profile.action";
 import Wrapper from "@/features/providers/Wrapper";
-import PurchasePage from "@/features/purchase/purchase.page";
 import SettingPage from "@/features/setting/setting.page";
 import StaffPage from "@/features/staff/staff.page";
-import SupplierPage from "@/features/supplier/supplier.page";
 import UnitConversionPage from "@/features/unit-conversion/unit-conversion.page";
 import WarehousePage from "@/features/warehouse/warehouse.page";
 import AppLayout from "@/layout/app-layout";
@@ -126,8 +124,8 @@ function RouteList() {
           <Route element={<ProtectedRoute />}>
             {/* Sales & POS Routes */}
             <Route index element={<DashboardPage />} />
-            <Route path="pos" element={<POSPage />} />
-            <Route path="orders" element={<OrdersPage />} />
+            <Route path="pos" element={<POSPage isCustomer={true} />} />
+            <Route path="orders" element={<OrdersPage isCustomer={true} />} />
             <Route path="orders/:slug" element={<OrderDetailsPage />} />
 
             {/* Inventory & Products Routes */}
@@ -140,11 +138,29 @@ function RouteList() {
 
               {/* Purchasing & Suppliers Routes */}
 
-              <Route path="purchase" element={<PurchasePage />} />
-              <Route path="suppliers" element={<SupplierPage />} />
+              <Route
+                path="purchase-pos"
+                element={<POSPage isCustomer={false} />}
+              />
+              <Route
+                path="purchase-orders"
+                element={<OrdersPage isCustomer={false} />}
+              />
+              <Route
+                path="purchase-orders/:slug"
+                element={<OrderDetailsPage />}
+              />
+              <Route
+                path="suppliers"
+                element={<CustomerPage isCustomer={false} />}
+              />
+              <Route path="suppliers/:slug" element={<CustomerDetailsPage />} />
 
               {/* People & Loyalty Routes */}
-              <Route path="customers" element={<CustomerPage />} />
+              <Route
+                path="customers"
+                element={<CustomerPage isCustomer={true} />}
+              />
               <Route path="customers/:slug" element={<CustomerDetailsPage />} />
 
               <Route path="staff" element={<StaffPage />} />
