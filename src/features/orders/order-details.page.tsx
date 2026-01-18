@@ -330,49 +330,28 @@ export default function OrderDetailsPage() {
     doc.addFont("Pyidaungsu.ttf", "Pyidaungsu", "normal");
     doc.setFont("Pyidaungsu");
 
-    // --- Header Section ---
-    // doc.setFontSize(18);
-    // doc.text("ဟိတ်တန်", 77.5, 15, { align: "center" }); // "Htate Tan" in Burmese
-
-    // doc.setFontSize(9);
-    // doc.text("ထီး၊ မိုးကာ အထွေထွေ ရောင်းဝယ်ရေးနှင့် ဖြန့်ချိရေး", 77.5, 22, {
-    //   align: "center",
-    // });
-
-    // // Phone numbers and Address
-    // doc.setFontSize(8);
-    // doc.text("ဖုန်း - 09 50 92847, 09 2540 78179", 77.5, 28, {
-    //   align: "center",
-    // });
-    // doc.text(
-    //   "အမှတ် (၈၅/၉၃)၊ ဒုတိယထပ်၊ လမ်း ၃၀ (အောက်)၊ ပန်းဘဲတန်းမြို့နယ်၊ ရန်ကုန်မြို့။",
-    //   77.5,
-    //   33,
-    //   { align: "center" }
-    // );
-
-    // doc.line(10, 36, 145, 36); // Horizontal line
-
+    const drawHeader = () => {
+      doc.setFontSize(10);
+      doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
+      doc.text(
+        `${new Date().toLocaleDateString("en-ca", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })}`,
+        105,
+        45,
+      );
+      doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
+    };
     // --- Info Section ---
-    doc.setFontSize(10);
-    doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
-    doc.text(
-      `${new Date().toLocaleDateString("en-ca", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      })}`,
-      105,
-      45,
-    );
-    doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
 
     // --- Items Table ---
     const tableColumn = ["", "", "", ""];
     const tableRows = watchedItems.map((item) => [
       item.quantity,
       `${item.productSKU ? "[" + item.productSKU + "] " : ""}${item.productName}`,
-      item.unitPrice.toLocaleString(),
+      parseFloat(item.unitPrice + "").toLocaleString(),
       (item.quantity * item.unitPrice).toLocaleString(),
     ]);
 
@@ -403,6 +382,7 @@ export default function OrderDetailsPage() {
       },
       // Ensure table fills space but leaves room for total
       margin: { left: 10, right: 10 },
+      didDrawPage: drawHeader,
     });
 
     doc.setFontSize(10);
@@ -410,14 +390,6 @@ export default function OrderDetailsPage() {
     doc.text(`${calculatedPayable.toLocaleString()} Ks`, 143, 180, {
       align: "right",
     });
-
-    // doc.setFontSize(8);
-    // doc.text("* ဝယ်ပြီးပစ္စည်း ပြန်မလဲပါ။", 12, finalY + 15);
-
-    // doc.text("..........................", 120, finalY + 25, {
-    //   align: "center",
-    // });
-    // doc.text("ငွေလက်ခံသူ", 120, finalY + 30, { align: "center" });
 
     const blobURL = doc.output("bloburl");
     window.open(blobURL, "_blank");
