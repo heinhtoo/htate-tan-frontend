@@ -105,7 +105,7 @@ export default function OrderDetailsPage() {
     queryKey: ["car-gate-all"],
     queryFn: () =>
       getCarGates({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
 
@@ -123,7 +123,7 @@ export default function OrderDetailsPage() {
 
   const watchedDiscount = useMemo(
     () => watchedItems.reduce((s, p) => s + (Number(p.discountAmount) || 0), 0),
-    [watchedItems]
+    [watchedItems],
   );
 
   const totalPaid = useMemo(
@@ -131,23 +131,23 @@ export default function OrderDetailsPage() {
       watchedPayments
         .filter((p) => p.status === "completed")
         .reduce((s, p) => s + (Number(p.amount) || 0), 0),
-    [watchedPayments]
+    [watchedPayments],
   );
   const totalPlannedPayments = useMemo(
     () => watchedPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0),
-    [watchedPayments]
+    [watchedPayments],
   );
 
   const calculatedPayable = useMemo(() => {
     const subtotal = watchedItems.reduce(
       (acc, curr) => acc + curr.quantity * curr.unitPrice,
-      0
+      0,
     );
 
     // Calculate total from other charges fields
     const otherChargesTotal = (watchedOtherCharges || []).reduce(
       (acc, curr) => acc + (Number(curr.amount) || 0),
-      0
+      0,
     );
 
     return subtotal + otherChargesTotal - Number(watchedDiscount || 0);
@@ -175,7 +175,7 @@ export default function OrderDetailsPage() {
 
     // Find unconfirmed (pending) payments
     const unconfirmed = paymentsRef.current.filter(
-      (p) => p.status !== "completed"
+      (p) => p.status !== "completed",
     );
 
     if (remainingToAllocate > 0) {
@@ -190,7 +190,7 @@ export default function OrderDetailsPage() {
               Number(perPaymentAmount.toFixed(2)),
               {
                 shouldDirty: true,
-              }
+              },
             );
           }
         });
@@ -224,14 +224,14 @@ export default function OrderDetailsPage() {
       const finalizedPayments = [...values.payments];
       const totalInput = finalizedPayments.reduce(
         (s, p) => s + (Number(p.amount) || 0),
-        0
+        0,
       );
       const changeDue = totalInput - calculatedPayable;
       if (changeDue > 0) {
         // Find the payment method that is 'Cash' (showValue: true)
         // Note: You need to ensure showValue is part of your form values or look it up
         const cashIndex = finalizedPayments.findIndex(
-          (p) => p.showValue === true
+          (p) => p.showValue === true,
         );
 
         if (cashIndex !== -1) {
@@ -251,7 +251,7 @@ export default function OrderDetailsPage() {
         // Items that exist in original but not in current fields
         removedItems: originalItems
           .filter(
-            (orig) => !values.items.find((curr: any) => curr.id === orig.id)
+            (orig) => !values.items.find((curr: any) => curr.id === orig.id),
           )
           .map((i) => i.id),
 
@@ -355,7 +355,7 @@ export default function OrderDetailsPage() {
 
     // --- Info Section ---
     doc.setFontSize(10);
-    doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 45);
+    doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
     doc.text(
       `${new Date().toLocaleDateString("en-ca", {
         year: "numeric",
@@ -363,9 +363,9 @@ export default function OrderDetailsPage() {
         day: "2-digit",
       })}`,
       105,
-      45
+      45,
     );
-    doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 52);
+    doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
 
     // --- Items Table ---
     const tableColumn = ["", "", "", ""];
@@ -377,7 +377,7 @@ export default function OrderDetailsPage() {
     ]);
 
     autoTable(doc, {
-      startY: 60,
+      startY: 65,
       head: [tableColumn],
       body: tableRows,
       theme: "grid",
@@ -397,7 +397,7 @@ export default function OrderDetailsPage() {
       columnStyles: {
         0: { cellWidth: 10, halign: "center" }, // No.
         1: { cellWidth: "auto" }, // Particulars
-        2: { cellWidth: 15, halign: "center" }, // Quantity
+        2: { cellWidth: 20, halign: "center" }, // Quantity
         3: { cellWidth: 25, halign: "right" }, // Unit Price
         4: { cellWidth: 25, halign: "right" }, // Amount
       },
@@ -446,7 +446,7 @@ export default function OrderDetailsPage() {
                   <Badge
                     className={cn(
                       "text-[10px] px-2 py-0 border-none shadow-none",
-                      status.color
+                      status.color,
                     )}
                   >
                     {orderData?.status}
@@ -595,23 +595,23 @@ export default function OrderDetailsPage() {
                         <POSProductSection
                           addToCart={(product, multiplier) => {
                             const existingIndex = watchedItems.findIndex(
-                              (item) => item.productId === product.id
+                              (item) => item.productId === product.id,
                             );
 
                             if (existingIndex !== -1) {
                               // Update quantity of existing row
                               const currentQty = form.getValues(
-                                `items.${existingIndex}.quantity`
+                                `items.${existingIndex}.quantity`,
                               );
                               form.setValue(
                                 `items.${existingIndex}.quantity`,
-                                currentQty + 1 * multiplier
+                                currentQty + 1 * multiplier,
                               );
                               toast.success(
                                 `Updated ${product.name} quantity ${currentQty + 1 * multiplier}`,
                                 {
                                   position: "top-center",
-                                }
+                                },
                               );
                             } else {
                               // Add new row
@@ -680,7 +680,7 @@ export default function OrderDetailsPage() {
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.quantity`,
-                                e.currentTarget.valueAsNumber
+                                e.currentTarget.valueAsNumber,
                               );
                             }}
                           />
@@ -693,7 +693,7 @@ export default function OrderDetailsPage() {
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.unitPrice`,
-                                e.currentTarget.valueAsNumber
+                                e.currentTarget.valueAsNumber,
                               );
                             }}
                             className="h-8 text-right font-bold bg-transparent border-slate-200 focus:bg-white"
@@ -707,7 +707,7 @@ export default function OrderDetailsPage() {
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.discountAmount`,
-                                e.currentTarget.valueAsNumber
+                                e.currentTarget.valueAsNumber,
                               );
                             }}
                             className="h-8 text-right font-bold bg-transparent border-slate-200 focus:bg-white"
@@ -774,7 +774,7 @@ export default function OrderDetailsPage() {
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.quantity`,
-                                e.currentTarget.valueAsNumber
+                                e.currentTarget.valueAsNumber,
                               );
                             }}
                             onWheelCapture={(e) => e.currentTarget.blur()}
@@ -843,12 +843,12 @@ export default function OrderDetailsPage() {
                       <OtherChargeDropdown
                         disabled={!isEditMode}
                         value={form.watch(
-                          `otherCharges.${index}.otherChargeId` as any
+                          `otherCharges.${index}.otherChargeId` as any,
                         )}
                         setValue={(value) => {
                           form.setValue(
                             `otherCharges.${index}.otherChargeId` as any,
-                            value
+                            value,
                           );
                         }}
                       />
@@ -912,7 +912,7 @@ export default function OrderDetailsPage() {
                     disabled={remainingAmount <= 0}
                     className={cn(
                       "rounded-full border-indigo-200 text-indigo-600",
-                      remainingAmount <= 0 && "opacity-50 cursor-not-allowed"
+                      remainingAmount <= 0 && "opacity-50 cursor-not-allowed",
                     )}
                     onClick={() => {
                       if (remainingAmount > 0) {
@@ -949,7 +949,7 @@ export default function OrderDetailsPage() {
                         "relative group rounded-[1.5rem] border-2 transition-all duration-200",
                         isCompleted
                           ? "bg-emerald-50/30 border-emerald-100"
-                          : "bg-white border-slate-100 shadow-sm"
+                          : "bg-white border-slate-100 shadow-sm",
                       )}
                     >
                       {/* Status Indicator Tag */}
@@ -958,7 +958,7 @@ export default function OrderDetailsPage() {
                           "absolute -top-2.5 left-6 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
                           isCompleted
                             ? "bg-emerald-500 text-white border-emerald-500"
-                            : "bg-amber-400 text-white border-amber-400"
+                            : "bg-amber-400 text-white border-amber-400",
                         )}
                       >
                         {isCompleted ? "Captured" : "Pending"}
@@ -973,12 +973,12 @@ export default function OrderDetailsPage() {
                           <PaymentTypeDropdown
                             disabled={!isEditMode || isCompleted}
                             value={form.watch(
-                              `payments.${index}.paymentMethodId` as any
+                              `payments.${index}.paymentMethodId` as any,
                             )}
                             setValue={(value) =>
                               form.setValue(
                                 `payments.${index}.paymentMethodId` as any,
-                                value
+                                value,
                               )
                             }
                           />
@@ -993,7 +993,7 @@ export default function OrderDetailsPage() {
                             <Input
                               disabled={!isEditMode || isCompleted}
                               {...form.register(
-                                `payments.${index}.referenceId`
+                                `payments.${index}.referenceId`,
                               )}
                               placeholder="Txn # / Ref ID"
                               className="h-10 bg-white/50 border-slate-200 rounded-xl text-xs"
@@ -1028,7 +1028,7 @@ export default function OrderDetailsPage() {
                                 "h-10 w-10 rounded-xl transition-colors",
                                 isCompleted
                                   ? "text-rose-400 hover:bg-rose-50"
-                                  : "text-emerald-500 hover:bg-emerald-50"
+                                  : "text-emerald-500 hover:bg-emerald-50",
                               )}
                               onClick={() => {
                                 const nextStatus = isCompleted
@@ -1036,7 +1036,7 @@ export default function OrderDetailsPage() {
                                   : "completed";
                                 form.setValue(
                                   `payments.${index}.status`,
-                                  nextStatus
+                                  nextStatus,
                                 );
                               }}
                             >
@@ -1182,7 +1182,7 @@ export default function OrderDetailsPage() {
                       {watchedItems
                         .reduce(
                           (acc, curr) => acc + curr.quantity * curr.unitPrice,
-                          0
+                          0,
                         )
                         .toLocaleString()}{" "}
                       Ks
@@ -1220,7 +1220,7 @@ export default function OrderDetailsPage() {
                         "text-sm px-3 py-1 font-black",
                         calculatedPayable - totalPaid <= 0
                           ? "border-emerald-500 text-emerald-400"
-                          : "border-rose-500 text-rose-400"
+                          : "border-rose-500 text-rose-400",
                       )}
                     >
                       {(calculatedPayable - totalPaid).toLocaleString()} Ks
