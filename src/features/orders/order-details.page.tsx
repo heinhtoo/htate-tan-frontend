@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2Icon,
+  ChevronDown,
   ChevronLeft,
   Coins,
   CreditCard,
@@ -41,19 +42,36 @@ import { getStatusConfig } from "./orders.page";
 
 import OtherChargeDropdown from "@/components/dropdown/other-charge.dropdown";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { PYIDAUNGSU_BASE64 } from "@/lib/textHelper";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useErrorStore } from "@/store/error.store";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import POSProductSection from "../pos/pos-product-section";
 import { cancelPOSOrder } from "../pos/pos.action";
+import { InvoicePrint } from "./order-print";
+import { InvoicePrintV2 } from "./order-print-v2";
 import { OrderStatus } from "./order.response";
 
 export default function OrderDetailsPage() {
@@ -317,83 +335,132 @@ export default function OrderDetailsPage() {
   const isPending = updateMutation.isPending || cancelMutation.isPending;
   const status = getStatusConfig(orderData?.status ?? "");
 
+  const printRef = useRef<HTMLDivElement>(null);
+  const printRefV2 = useRef<HTMLDivElement>(null);
+  const [defaultVersion, setDefaultVersion] = useState(
+    localStorage.getItem("printDefault"),
+  );
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+
+  const handlePrintV1 = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "Order - " + order?.response?.data.id,
+  });
+
+  const handlePrintV2 = useReactToPrint({
+    contentRef: printRefV2,
+    documentTitle: "Order - " + order?.response?.data.id,
+  });
+
   const handlePrint = () => {
-    // Define custom size: [width, height] in mm
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [155, 185],
-    });
-
-    // Load Burmese Font
-    doc.addFileToVFS("Pyidaungsu.ttf", PYIDAUNGSU_BASE64);
-    doc.addFont("Pyidaungsu.ttf", "Pyidaungsu", "normal");
-    doc.setFont("Pyidaungsu");
-
-    const drawHeader = () => {
-      doc.setFontSize(10);
-      doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
-      doc.text(
-        `${new Date().toLocaleDateString("en-ca", {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-        })}`,
-        105,
-        45,
-      );
-      doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
-    };
-    // --- Info Section ---
-
-    // --- Items Table ---
-    const tableColumn = ["", "", "", ""];
-    const tableRows = watchedItems.map((item) => [
-      item.quantity,
-      `${item.productSKU ? "[" + item.productSKU + "] " : ""}${item.productName}`,
-      parseFloat(item.unitPrice + "").toLocaleString(),
-      (item.quantity * item.unitPrice).toLocaleString(),
-    ]);
-
-    autoTable(doc, {
-      startY: 65,
-      head: [tableColumn],
-      body: tableRows,
-      theme: "grid",
-      styles: {
-        font: "Pyidaungsu",
-        fontSize: 9,
-        cellPadding: 2,
-        lineColor: [0, 0, 0], // Black borders like the physical receipt
-        lineWidth: 0,
-      },
-      headStyles: {
-        fillColor: [255, 255, 255], // White background
-        textColor: [0, 0, 0], // Black text
-        fontStyle: "bold",
-        halign: "center",
-      },
-      columnStyles: {
-        0: { cellWidth: 10, halign: "center" }, // No.
-        1: { cellWidth: "auto" }, // Particulars
-        2: { cellWidth: 20, halign: "center" }, // Quantity
-        3: { cellWidth: 25, halign: "right" }, // Unit Price
-        4: { cellWidth: 25, halign: "right" }, // Amount
-      },
-      // Ensure table fills space but leaves room for total
-      margin: { left: 10, right: 10 },
-      didDrawPage: drawHeader,
-    });
-
-    doc.setFontSize(10);
-    // doc.text("စုစုပေါင်း (Total Amount):", 85, finalY + 5);
-    doc.text(`${calculatedPayable.toLocaleString()} Ks`, 143, 180, {
-      align: "right",
-    });
-
-    const blobURL = doc.output("bloburl");
-    window.open(blobURL, "_blank");
+    if (defaultVersion === "v1") {
+      handlePrintV1();
+    } else if (defaultVersion === "v2") {
+      handlePrintV2();
+    } else {
+      // No default set, ask the user
+      setShowPrintModal(true);
+    }
   };
+
+  const selectVersion = (version: string) => {
+    if (saveAsDefault) {
+      localStorage.setItem("printDefault", version);
+      setDefaultVersion(version);
+    }
+
+    // Execute the print
+    if (version === "v1") {
+      handlePrintV1();
+    } else {
+      handlePrintV2();
+    }
+    setShowPrintModal(false);
+  };
+
+  const clearPreference = () => {
+    localStorage.removeItem("printDefault");
+    setDefaultVersion(null);
+  };
+
+  // const handlePrint = () => {
+  //   // Define custom size: [width, height] in mm
+  //   const doc = new jsPDF({
+  //     orientation: "portrait",
+  //     unit: "mm",
+  //     format: [155, 185],
+  //   });
+
+  //   // Load Burmese Font
+  //   doc.addFileToVFS("Pyidaungsu.ttf", PYIDAUNGSU_BASE64);
+  //   doc.addFont("Pyidaungsu.ttf", "Pyidaungsu", "normal");
+  //   doc.setFont("Pyidaungsu");
+
+  //   const drawHeader = () => {
+  //     doc.setFontSize(10);
+  //     doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
+  //     doc.text(
+  //       `${new Date().toLocaleDateString("en-ca", {
+  //         year: "numeric",
+  //         month: "short",
+  //         day: "2-digit",
+  //       })}`,
+  //       105,
+  //       45,
+  //     );
+  //     doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
+  //   };
+  //   // --- Info Section ---
+
+  //   // --- Items Table ---
+  //   const tableColumn = ["", "", "", ""];
+  //   const tableRows = watchedItems.map((item) => [
+  //     item.quantity,
+  //     `${item.productSKU ? "[" + item.productSKU + "] " : ""}${item.productName}`,
+  //     parseFloat(item.unitPrice + "").toLocaleString(),
+  //     (item.quantity * item.unitPrice).toLocaleString(),
+  //   ]);
+
+  //   autoTable(doc, {
+  //     startY: 65,
+  //     head: [tableColumn],
+  //     body: tableRows,
+  //     theme: "grid",
+  //     styles: {
+  //       font: "Pyidaungsu",
+  //       fontSize: 9,
+  //       cellPadding: 2,
+  //       lineColor: [0, 0, 0], // Black borders like the physical receipt
+  //       lineWidth: 0,
+  //     },
+  //     headStyles: {
+  //       fillColor: [255, 255, 255], // White background
+  //       textColor: [0, 0, 0], // Black text
+  //       fontStyle: "bold",
+  //       halign: "center",
+  //     },
+  //     columnStyles: {
+  //       0: { cellWidth: 10, halign: "center" }, // No.
+  //       1: { cellWidth: "auto" }, // Particulars
+  //       2: { cellWidth: 20, halign: "center" }, // Quantity
+  //       3: { cellWidth: 25, halign: "right" }, // Unit Price
+  //       4: { cellWidth: 25, halign: "right" }, // Amount
+  //     },
+  //     // Ensure table fills space but leaves room for total
+  //     margin: { left: 10, right: 10 },
+  //     didDrawPage: drawHeader,
+  //   });
+
+  //   doc.setFontSize(10);
+  //   // doc.text("စုစုပေါင်း (Total Amount):", 85, finalY + 5);
+  //   doc.text(`${calculatedPayable.toLocaleString()} Ks`, 143, 180, {
+  //     align: "right",
+  //   });
+
+  //   const blobURL = doc.output("bloburl");
+  //   window.open(blobURL, "_blank");
+  // };
 
   const itemCount = watchedItems.length;
 
@@ -444,6 +511,37 @@ export default function OrderDetailsPage() {
                   >
                     <Printer size={16} /> Print
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 rounded-l-none"
+                      >
+                        <ChevronDown size={14} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handlePrint}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span>Print Order</span>
+                      </DropdownMenuItem>
+
+                      {/* Only show "Clear" if a default is actually set */}
+                      {defaultVersion && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={clearPreference}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Clear Print Preference</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   {orderData?.status !== "Success" && (
                     <Button
                       size="sm"
@@ -1236,6 +1334,74 @@ export default function OrderDetailsPage() {
           </div>
         )}
       </div>
+      <div style={{ display: "none" }}>
+        <InvoicePrint
+          ref={printRef}
+          orderData={orderData}
+          watchedItems={watchedItems}
+          calculatedPayable={calculatedPayable}
+        />
+        <InvoicePrintV2
+          warehouseAddress={orderData?.warehouse as any}
+          paymentData={orderData?.payments as any}
+          ref={printRefV2}
+          orderData={orderData}
+          watchedItems={watchedItems}
+          calculatedPayable={calculatedPayable}
+          carGate={orderData?.carGate?.name}
+        />
+      </div>
+      <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Print Options</DialogTitle>
+            <DialogDescription>
+              Choose which layout version you would like to print.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={() => selectVersion("v1")}
+                className="justify-start h-12"
+              >
+                <span className="font-bold mr-2">V1:</span> Standard Invoice
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => selectVersion("v2")}
+                className="justify-start h-12"
+              >
+                <span className="font-bold mr-2">V2:</span> Detailed Summary
+              </Button>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="default"
+                checked={saveAsDefault}
+                onCheckedChange={(value) => {
+                  setSaveAsDefault(value);
+                }}
+              />
+              <Label
+                htmlFor="default"
+                className="text-sm font-medium leading-none cursor-pointer"
+              >
+                Remember my choice for next time
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPrintModal(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
