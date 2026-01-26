@@ -35,7 +35,7 @@ export const InvoicePrintV2 = forwardRef<
         : completedPayments[0]?.type || "Credit";
 
     // Increased items per page slightly because we are making it more compact
-    const ITEMS_PER_PAGE = 18;
+    const ITEMS_PER_PAGE = 16;
     const pages = [];
     for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
@@ -44,7 +44,7 @@ export const InvoicePrintV2 = forwardRef<
 
     return (
       <div className="hidden">
-        <div ref={ref} className="flex flex-col">
+        <div ref={ref} className="flex flex-col items-center justify-center">
           <style
             dangerouslySetInnerHTML={{
               __html: `
@@ -61,7 +61,7 @@ export const InvoicePrintV2 = forwardRef<
           {pages.map((pageItems, pageIndex) => (
             <div
               key={pageIndex}
-              className="print-page w-[148mm] h-[210mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0 relative"
+              className="print-page w-[140mm] h-[200mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0 relative"
               style={{ boxSizing: "border-box" }}
             >
               {/* --- WATERMARK --- */}
@@ -76,7 +76,7 @@ export const InvoicePrintV2 = forwardRef<
                 <div className="flex flex-row items-center justify-center mb-1">
                   <img src={headline} className="h-[120px] object-contain" />
                 </div>
-                <div className="text-[12px] leading-tight pt-1 flex flex-col items-center gap-1.5">
+                <div className="text-[10px] leading-tight pt-1 flex flex-col items-center gap-1.5">
                   <p
                     className={
                       warehouseAddress?.id === 2
@@ -95,8 +95,7 @@ export const InvoicePrintV2 = forwardRef<
                     }
                   >
                     ဆိုင်(၂) - အမှတ် (၁၈၀)၊ စက်ရုံလမ်းမပေါ်၊ ၁၃၆လမ်းနှင့်
-                    ၁၃၇လမ်းကြား၊​ မင်္ဂလာမွန်စျေးရှေ့၊​ ရန်ကုန်မြို့။ - 09 2540
-                    78179
+                    ၁၃၇လမ်းကြား၊​ မင်္ဂလာမွန်စျေးရှေ့ - 09 2540 78179
                   </p>
                 </div>
               </div>
