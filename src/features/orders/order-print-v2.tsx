@@ -1,6 +1,8 @@
+/* eslint-disable no-irregular-whitespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { forwardRef } from "react";
 import type { WarehouseResponse } from "../warehouse/warehouse.response";
+import headline from "./headline.png";
 import type { PaymentResponse } from "./order.response";
 
 export const InvoicePrintV2 = forwardRef<
@@ -29,11 +31,11 @@ export const InvoicePrintV2 = forwardRef<
       paymentData?.filter((p) => p.status === "completed") || [];
     const payTypeDisplay =
       completedPayments.length > 1
-        ? "Mixed Payment"
+        ? "Mixed"
         : completedPayments[0]?.type || "Credit";
 
-    // --- Pagination Logic (15 items per page) ---
-    const ITEMS_PER_PAGE = 15;
+    // Increased items per page slightly because we are making it more compact
+    const ITEMS_PER_PAGE = 18;
     const pages = [];
     for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
@@ -48,7 +50,7 @@ export const InvoicePrintV2 = forwardRef<
               __html: `
             @media print {
               @page { size: A5 portrait; margin: 0; }
-              .print-page { page-break-after: always; }
+              .print-page { page-break-after: always; position: relative; overflow: hidden; }
               .print-page:last-child { page-break-after: auto; }
               body { -webkit-print-color-adjust: exact; }
             }
@@ -59,21 +61,22 @@ export const InvoicePrintV2 = forwardRef<
           {pages.map((pageItems, pageIndex) => (
             <div
               key={pageIndex}
-              className="print-page w-[148mm] h-[210mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0"
+              className="print-page w-[148mm] h-[210mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0 relative"
               style={{ boxSizing: "border-box" }}
             >
-              {/* --- HEADER (Exactly as requested) --- */}
-              <div className="bg-[#3e451f] text-white p-4 pt-6 text-center relative overflow-hidden">
-                <h1 className="text-4xl font-black mb-1 tracking-widest leading-none">
+              {/* --- WATERMARK --- */}
+              <div className="absolute left-0 bottom-0 top-32 right-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none">
+                <span className="text-[120px] font-black px-8 py-2 rotate-[-35deg] uppercase">
                   ထိပ်တန်း
-                </h1>
-                <p className="text-sm font-medium tracking-wide">
-                  ကိုသိန်းထွန်း + မစိမ့်စိမ့်
-                </p>
-                <p className="text-[10px] mb-2 opacity-90 italic">
-                  ထီး၊ ဦးထုပ်၊ သိုးမွှေးခေါင်းစွပ် ဖြန့်ချီရေး
-                </p>
-                <div className="text-[9px] leading-relaxed opacity-100 border-t border-white/30 pt-2 mt-1 px-4 text-center inline-block w-full">
+                </span>
+              </div>
+
+              {/* --- COMPACT HEADER --- */}
+              <div className="p-3 pt-4 text-center relative z-10">
+                <div className="flex flex-row items-center justify-center mb-1">
+                  <img src={headline} className="h-[120px] object-contain" />
+                </div>
+                <div className="text-[12px] leading-tight pt-1 flex flex-col items-center gap-1.5">
                   <p
                     className={
                       warehouseAddress?.id === 2
@@ -81,8 +84,8 @@ export const InvoicePrintV2 = forwardRef<
                         : "opacity-70"
                     }
                   >
-                    ဆိုင်(၁) - ဆိုင်အမှတ် (၈၅၊ ၉၃)၊ ဒုတိယထပ်၊ ရွှေမင်္ဂလာစျေး -
-                    09 50 92847
+                    ဆိုင်(၁) - ဆိုင်အမှတ် (၈၅၊ ၉၃)၊ ဒုတိယထပ်၊
+                    (အတက်စက်လှေကားအနီး)၊ ရွှေမင်္ဂလာစျေး - 09 50 92847
                   </p>
                   <p
                     className={
@@ -91,130 +94,109 @@ export const InvoicePrintV2 = forwardRef<
                         : "opacity-70"
                     }
                   >
-                    ဆိုင်(၂) - အမှတ် (၁၈၀)၊ စက်ရုံလမ်း၊ မင်္ဂလာမွန်စျေး - 09
-                    2540 78179
+                    ဆိုင်(၂) - အမှတ် (၁၈၀)၊ စက်ရုံလမ်းမပေါ်၊ ၁၃၆လမ်းနှင့်
+                    ၁၃၇လမ်းကြား၊​ မင်္ဂလာမွန်စျေးရှေ့၊​ ရန်ကုန်မြို့။ - 09 2540
+                    78179
                   </p>
                 </div>
               </div>
 
-              {/* --- METADATA GRID (Exactly as requested) --- */}
-              <div className="px-4 py-2 grid grid-cols-2 text-[11px] border-b border-slate-900 bg-slate-50">
-                <div className="space-y-1.5 pr-2">
-                  <div className="flex">
-                    <span className="w-16 shrink-0 font-bold text-slate-500 text-[9px]">
+              {/* --- COMPACT METADATA GRID --- */}
+              <div className="px-4 py-1.5 grid grid-cols-2 text-[10px] border-y border-slate-900 bg-slate-50/50 z-10">
+                <div className="space-y-1 pr-2">
+                  <div className="flex items-baseline">
+                    <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
                       CUSTOMER
                     </span>
                     <span className="mx-1">:</span>
-                    <span className="font-bold break-words">
+                    <span className="font-bold truncate">
                       {orderData?.customer?.name || "Walk-In"}
                     </span>
                   </div>
-                  <div className="flex">
-                    <span className="w-16 shrink-0 font-bold text-slate-500 text-[9px]">
+                  <div className="flex items-baseline">
+                    <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
                       ADDRESS
                     </span>
                     <span className="mx-1">:</span>
-                    <span className="break-words leading-tight">
+                    <span className="truncate leading-tight">
                       {orderData?.customer?.address || "N/A"}
                     </span>
                   </div>
-                  <div className="flex">
-                    <span className="w-16 shrink-0 font-bold text-slate-500 text-[9px]">
-                      PHONE
-                    </span>
-                    <span className="mx-1">:</span>
-                    <span className="font-mono">
-                      {orderData?.customer?.phone || "-"}
-                    </span>
-                  </div>
                 </div>
-                <div className="space-y-1.5 border-l border-slate-300 pl-3">
-                  <div className="flex">
-                    <span className="w-20 shrink-0 font-bold text-slate-500 text-[9px]">
+                <div className="space-y-1 border-l border-slate-300 pl-3">
+                  <div className="flex items-baseline">
+                    <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
                       DELIVERY
                     </span>
                     <span className="mx-1">:</span>
-                    <span className="break-words leading-tight">
+                    <span className="truncate leading-tight">
                       {carGate || "N/A"}
                     </span>
                   </div>
-                  <div className="flex">
-                    <span className="w-20 shrink-0 font-bold text-slate-500 text-[9px]">
-                      DATE
-                    </span>
-                    <span className="mx-1">:</span>
-                    <span className="font-mono">
-                      {new Date().toLocaleDateString("en-GB")}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="w-20 shrink-0 font-bold text-slate-500 text-[9px]">
+                  <div className="flex items-baseline">
+                    <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
                       PAY TYPE
                     </span>
                     <span className="mx-1">:</span>
-                    <span className="font-bold text-rose-600">
+                    <span className="font-bold text-rose-600 uppercase">
                       {payTypeDisplay}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <h2 className="text-center font-bold py-1 text-[10px] bg-white border-b border-slate-900 tracking-[0.4em] uppercase">
-                Sales Invoice
-              </h2>
-
-              {/* --- Table Section --- */}
-              <div className="flex-grow px-2 pt-2">
-                <table className="w-full text-[11px] border-collapse border-2 border-slate-900">
+              {/* --- Table Section (Reduced height) --- */}
+              <div className="flex-grow px-2 pt-1 z-10">
+                <table className="w-full text-[10px] border-collapse border-b border-slate-900">
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className="border border-slate-900 py-1 w-8 text-center font-bold">
+                      <th className="border border-slate-900 py-0.5 w-7 text-center font-bold">
                         No.
                       </th>
-                      <th className="border border-slate-900 py-1 px-2 text-left font-bold">
+                      <th className="border border-slate-900 py-0.5 px-2 text-left font-bold">
                         Description
                       </th>
-                      <th className="border border-slate-900 py-1 w-10 text-center font-bold">
+                      <th className="border border-slate-900 py-0.5 w-16 text-center font-bold">
                         Qty
                       </th>
-                      <th className="border border-slate-900 py-1 w-20 text-right pr-1 font-bold">
+                      <th className="border border-slate-900 py-0.5 w-24 text-right pr-1 font-bold">
                         Price
                       </th>
-                      <th className="border border-slate-900 py-1 w-24 text-right pr-1 font-bold font-mono">
+                      <th className="border border-slate-900 py-0.5 w-32 text-right pr-1 font-bold">
                         Amount
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {pageItems.map((item, i) => (
-                      <tr key={i} className="h-7 border-b border-slate-900">
-                        <td className="border border-slate-900 text-center font-mono">
+                      <tr key={i} className="h-6 border-b border-slate-400">
+                        <td className="border-x border-slate-900 text-center font-mono text-[9px]">
                           {pageIndex * ITEMS_PER_PAGE + i + 1}
                         </td>
-                        <td className="border border-slate-900 px-2 font-medium py-1">
+                        <td className="border-r border-slate-900 px-2 font-medium truncate max-w-[180px]">
                           {item.productName}
                         </td>
-                        <td className="border border-slate-900 text-center font-bold">
+                        <td className="border-r border-slate-900 text-center font-bold">
                           {item.quantity}
                         </td>
-                        <td className="border border-slate-900 text-right pr-1 font-mono">
-                          {item.unitPrice.toLocaleString()}
+                        <td className="border-r border-slate-900 text-right pr-1 font-mono">
+                          {parseFloat(item.unitPrice + "").toLocaleString()}
                         </td>
-                        <td className="border border-slate-900 text-right pr-1 font-bold font-mono">
+                        <td className="border-r border-slate-900 text-right pr-1 font-bold font-mono">
                           {(item.quantity * item.unitPrice).toLocaleString()}
                         </td>
                       </tr>
                     ))}
-                    {/* Fill empty rows */}
+                    {/* Empty row filler to keep table height consistent */}
                     {Array.from({
                       length: Math.max(0, ITEMS_PER_PAGE - pageItems.length),
                     }).map((_, i) => (
-                      <tr key={i} className="h-7 border-b border-slate-900">
-                        <td className="border border-slate-900"></td>
-                        <td className="border border-slate-900"></td>
-                        <td className="border border-slate-900"></td>
-                        <td className="border border-slate-900"></td>
-                        <td className="border border-slate-900"></td>
+                      <tr key={i} className="h-6 border-b border-slate-200">
+                        <td className="border-x border-slate-900"></td>
+                        <td className="border-r border-slate-900"></td>
+                        <td className="border-r border-slate-900"></td>
+                        <td className="border-r border-slate-900"></td>
+                        <td className="border-r border-slate-900"></td>
                       </tr>
                     ))}
                   </tbody>
@@ -222,20 +204,24 @@ export const InvoicePrintV2 = forwardRef<
               </div>
 
               {/* --- Footer Area --- */}
-              <div className="px-4 pb-4">
-                <div className="flex justify-between items-end pt-3 ">
-                  {/* Left: Policy (Only visible on last page or all pages, your choice) */}
-                  <div className="w-1/2 space-y-1 text-[9px] text-slate-800 font-medium leading-relaxed italic">
-                    <p>• အနာပစ္စည်းများ ၇ ရက်ထက်ကျော်လွန်လျှင် မလဲပေးပါ။</p>
-                    <p>• ဘောင်ချာပါမှ အနာပစ္စည်းများအားလဲပေးပါမည်။</p>
-                    <p>• ဘောင်ချာမပါလျှင် ဘာပစ္စည်းမှ အလဲမပေးပါ </p>
+              <div className="px-4 pb-2 z-10">
+                <div className="flex justify-between items-end pt-2">
+                  <div className="grow space-y-0.5 text-[8px] text-slate-700 font-medium leading-tight italic">
+                    <p>• တရုတ် China ထီးပစ္စည်းများ အနာ လုံးဝ မလဲပေးပါ။</p>
+                    <p>
+                      • ကုမ္ပဏီထီးအနာပစ္စည်းများကို ဝယ်ပြီး ၇ရက်ထက်
+                      ကျော်လွန်လျှင် မလဲပေးပါ။
+                    </p>
+                    <p>
+                      • အနာပစ္စည်းများအား လဲမည်ဆိုပါက ဘောက်ချာယူလာပါရန်၊
+                      ဘောက်ချာမပါလျှင် မလဲပေးပါ။
+                    </p>
                   </div>
 
-                  {/* Right: Totals (Last Page) and Page Numbers (Every Page) */}
-                  <div className="w-56 text-right flex flex-col items-end">
+                  <div className="w-48 text-right flex flex-col items-end">
                     {pageIndex === pages.length - 1 ? (
-                      <div className="w-full flex justify-between font-black text-lg leading-tight border-b-4 border-double border-slate-900 mb-2">
-                        <span className="text-xs self-end mb-1 uppercase">
+                      <div className="w-full flex justify-between font-black text-base leading-tight border-b-2 border-slate-900 mb-1">
+                        <span className="text-[9px] self-end mb-0.5 uppercase">
                           Total:
                         </span>
                         <span className="font-mono">
@@ -243,14 +229,13 @@ export const InvoicePrintV2 = forwardRef<
                         </span>
                       </div>
                     ) : (
-                      <div className="text-[10px] text-slate-400 font-bold uppercase italic mb-2">
+                      <div className="text-[8px] text-slate-400 font-bold uppercase italic mb-1">
                         Continued...
                       </div>
                     )}
-
-                    {/* Page Number at Bottom Right */}
-                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                      Page {pageIndex + 1} of {pages.length}
+                    <div className="text-[8px] font-bold text-slate-400 tracking-tighter">
+                      Page {pageIndex + 1} / {pages.length} —{" "}
+                      {new Date().toLocaleDateString("en-GB")}
                     </div>
                   </div>
                 </div>

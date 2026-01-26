@@ -112,6 +112,7 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
     data?.pages
       .filter((item) => item.response?.data)
       .flatMap((page) => page.response!.data) ?? [];
+
   const loadMoreRef = useRef<HTMLTableDataCellElement | null>(null);
 
   useEffect(() => {
