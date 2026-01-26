@@ -114,7 +114,7 @@ export const InvoicePrintV2 = forwardRef<
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
-                      ORDER NO
+                      VOUNCHER NO
                     </span>
                     <span className="mx-1">:</span>
                     <span className="truncate leading-tight">
