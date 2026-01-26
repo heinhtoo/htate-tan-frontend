@@ -61,7 +61,7 @@ export const InvoicePrintV2 = forwardRef<
           {pages.map((pageItems, pageIndex) => (
             <div
               key={pageIndex}
-              className="print-page w-[140mm] h-[200mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0 relative"
+              className="print-page w-[140mm] h-[190mm] bg-white text-slate-900 flex flex-col font-sans antialiased shrink-0 relative"
               style={{ boxSizing: "border-box" }}
             >
               {/* --- WATERMARK --- */}
@@ -109,16 +109,16 @@ export const InvoicePrintV2 = forwardRef<
                     </span>
                     <span className="mx-1">:</span>
                     <span className="font-bold truncate">
-                      {orderData?.customer?.name || "Walk-In"}
+                      {orderData?.customer?.name || "Walk-In"} {orderData?.customer?.city ? `(${orderData.customer.city})`: ""}
                     </span>
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-14 shrink-0 font-bold text-slate-500 text-[8px]">
-                      ADDRESS
+                      ORDER NO
                     </span>
                     <span className="mx-1">:</span>
                     <span className="truncate leading-tight">
-                      {orderData?.customer?.address || "N/A"}
+                      {orderData?.id}
                     </span>
                   </div>
                 </div>
@@ -155,10 +155,10 @@ export const InvoicePrintV2 = forwardRef<
                       <th className="border border-slate-900 py-0.5 px-2 text-left font-bold">
                         Description
                       </th>
-                      <th className="border border-slate-900 py-0.5 w-16 text-center font-bold">
+                      <th className="border border-slate-900 py-0.5 w-12 text-center font-bold">
                         Qty
                       </th>
-                      <th className="border border-slate-900 py-0.5 w-24 text-right pr-1 font-bold">
+                      <th className="border border-slate-900 py-0.5 w-16 text-right pr-1 font-bold">
                         Price
                       </th>
                       <th className="border border-slate-900 py-0.5 w-32 text-right pr-1 font-bold">
@@ -172,8 +172,8 @@ export const InvoicePrintV2 = forwardRef<
                         <td className="border-x border-slate-900 text-center font-mono text-[9px]">
                           {pageIndex * ITEMS_PER_PAGE + i + 1}
                         </td>
-                        <td className="border-r border-slate-900 px-2 font-medium truncate max-w-[180px]">
-                          {item.productName}
+                        <td className="border-r border-slate-900 px-2 font-medium truncate max-w-[220px]">
+                           {item.productSKU && `[${item.productSKU}] `}{item.productName}
                         </td>
                         <td className="border-r border-slate-900 text-center font-bold">
                           {item.quantity}

@@ -43,19 +43,19 @@ export const InvoicePrint = forwardRef<
               page-break-after: auto;
             }
             .header-spacer {
-              height: 50mm; /* Space for pre-printed header */
+              height: 40mm; /* Space for pre-printed header */
             }
             .header-info {
               display: flex;
               justify-content: space-between;
               height: 12mm;
-              align-items: flex-end;
+              align-items: flex-start;
             }
             
             /* THIS IS THE FIX: A fixed height area for items */
             .items-area {
               height: 95mm; 
-              margin-top: 5mm;
+              margin-top: 23mm;
               border: 1px dashed transparent; /* Helps debug alignment */
             }
 
@@ -68,8 +68,8 @@ export const InvoicePrint = forwardRef<
               line-height: 1.2;
             }
             .col-qty { width: 12mm; text-align: center; }
-            .col-name { width: auto; }
-            .col-price { width: 22mm; text-align: right; }
+            .col-name { width: 70mm; }
+            .col-price { width: 18mm; text-align: right; }
             .col-amount { width: 28mm; text-align: right; }
             
             .footer-area {
@@ -83,7 +83,7 @@ export const InvoicePrint = forwardRef<
               text-align: right;
               font-weight: bold;
               font-size: 13px;
-              margin-top: 10mm; /* Adjust to match pre-printed Total line */
+              margin-top: 20mm; /* Adjust to match pre-printed Total line */
             }
             .page-number {
               text-align: left;
@@ -103,10 +103,10 @@ export const InvoicePrint = forwardRef<
             <div className="header-info">
               <div>
                 <div style={{ fontSize: "12px", fontWeight: "bold" }}>
-                  {orderData?.customer?.name ?? "Walk-In"}
+                  {orderData?.customer?.name ?? "Walk-In"} {orderData?.customer?.city ? `(${orderData.customer.city})`: ""}
                 </div>
-                <div style={{ fontSize: "10px" }}>
-                  {orderData?.customer?.address ?? "N/A"}
+                <div style={{ fontSize: "10px", marginTop: '3mm' }}>
+                  {orderData?.id}
                 </div>
               </div>
               <div className="date" style={{ fontSize: "11px" }}>
@@ -116,7 +116,7 @@ export const InvoicePrint = forwardRef<
 
             {/* Content Area with Fixed Height */}
             <div className="items-area">
-              <table className="items-table">
+              <table className="items-table text-sm">
                 <tbody>
                   {pageItems.map((item, i) => (
                     <tr key={i}>

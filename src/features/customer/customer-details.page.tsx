@@ -46,7 +46,7 @@ const CustomerManagementSystem = () => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["customer-details", slug],
     queryFn: async () => {
-      const res = await getCustomerDetails({ id: slug! });
+      const res = await getCustomerDetails({ id: slug!, isCustomer: true });
       if (res.response) return res.response;
       throw new Error(res.error || ("Failed to fetch" as any));
     },

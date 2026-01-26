@@ -40,9 +40,9 @@ async function getCustomersFn({
   return { data: data.payload, pagination: data.pagination };
 }
 
-async function getCustomerDetailsFn({ id }: { id: string }) {
+async function getCustomerDetailsFn({ id, isCustomer }: { id: string, isCustomer:boolean }) {
   const response = await axiosClientInstance.get<APIResponse<any>>(
-    "/common/customer/" + id
+    "/common/customer/" + id +"?isCustomer=" + (isCustomer ? "1": "0")
   );
 
   const data = response.data;
