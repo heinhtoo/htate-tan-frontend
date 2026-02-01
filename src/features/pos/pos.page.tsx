@@ -65,6 +65,7 @@ import { getPaymentTypes } from "../payment-type/payment-type.action";
 import type { ProductResponse } from "../product/product.response";
 import { getSetting } from "../setting/setting.action";
 import { SettingKey } from "../setting/setting.response";
+import { DebouncedQtyInput } from "./debounce-qty-input";
 import POSProductSection from "./pos-product-section";
 import { createPOSOrder } from "./pos.action";
 
@@ -137,7 +138,7 @@ const CartSection = ({
                 "w-full justify-between h-14 rounded-2xl bg-slate-50 border-none transition-all duration-300",
                 open
                   ? "ring-2 ring-primary/20 bg-white shadow-lg"
-                  : "hover:bg-slate-100"
+                  : "hover:bg-slate-100",
               )}
             >
               <div className="flex items-center gap-3 overflow-hidden text-left">
@@ -145,7 +146,7 @@ const CartSection = ({
                   <User
                     className={cn(
                       "h-4 w-4",
-                      selectedCustomer ? "text-primary" : "text-slate-300"
+                      selectedCustomer ? "text-primary" : "text-slate-300",
                     )}
                   />
                 </div>
@@ -153,7 +154,7 @@ const CartSection = ({
                   <span
                     className={cn(
                       "text-sm font-bold truncate",
-                      selectedCustomer ? "text-slate-900" : "text-slate-400"
+                      selectedCustomer ? "text-slate-900" : "text-slate-400",
                     )}
                   >
                     {selectedCustomer
@@ -199,7 +200,7 @@ const CartSection = ({
                             "h-2 w-2 rounded-full",
                             selectedCustomer?.id === c.id
                               ? "bg-primary"
-                              : "bg-transparent"
+                              : "bg-transparent",
                           )}
                         />
                         <div className="flex flex-col flex-1">
@@ -225,7 +226,7 @@ const CartSection = ({
               "p-4 rounded-2xl flex items-center justify-between border-none transition-all animate-in fade-in slide-in-from-top-2",
               selectedCustomer.totalDebt > 0
                 ? "bg-rose-50/50"
-                : "bg-emerald-50/50"
+                : "bg-emerald-50/50",
             )}
           >
             <div className="flex items-center gap-3">
@@ -234,7 +235,7 @@ const CartSection = ({
                   "p-2.5 rounded-xl shadow-sm",
                   selectedCustomer.totalDebt > 0
                     ? "bg-white text-rose-500"
-                    : "bg-white text-emerald-500"
+                    : "bg-white text-emerald-500",
                 )}
               >
                 <Wallet className="h-4 w-4" />
@@ -248,7 +249,7 @@ const CartSection = ({
                     "font-black text-lg leading-none",
                     selectedCustomer.totalDebt > 0
                       ? "text-rose-600"
-                      : "text-emerald-600"
+                      : "text-emerald-600",
                   )}
                 >
                   {formatAmount(selectedCustomer.totalDebt)}
@@ -313,15 +314,7 @@ const CartSection = ({
                       </button>
 
                       {/* --- NUMERIC INPUT --- */}
-                      <Input
-                        type="number"
-                        className="w-14 h-8 bg-transparent border-none text-center font-black text-sm focus-visible:ring-0 p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        value={item.qty}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (!isNaN(val)) updateQty(item.id, val - item.qty);
-                        }}
-                      />
+                      <DebouncedQtyInput item={item} updateQty={updateQty} />
 
                       <button
                         onClick={() => updateQty(item.id, 1)}
@@ -377,7 +370,7 @@ const CartSection = ({
             "w-full h-20 rounded-[1.5rem] text-xl font-black shadow-2xl transition-all duration-300 active:scale-[0.97] hover:-translate-y-1",
             selectedCustomer?.totalDebt > 0
               ? "bg-rose-600 hover:bg-rose-700 shadow-rose-200"
-              : "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
+              : "bg-slate-900 hover:bg-slate-800 shadow-slate-200",
           )}
           onClick={handleCheckout}
           disabled={cart.length === 0 || isLoading}
@@ -457,21 +450,21 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     queryKey: ["other-charges-all"],
     queryFn: () =>
       getOtherCharges({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
   const { data: CAR_GATES } = useQuery({
     queryKey: ["car-gate-all"],
     queryFn: () =>
       getCarGates({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
   const { data: PAYMENT_METHODS } = useQuery({
     queryKey: ["payment-method-all"],
     queryFn: () =>
       getPaymentTypes({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
 
@@ -479,14 +472,14 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     queryKey: ["customer-all"],
     queryFn: () =>
       getCustomers({ page: "0", size: "0", s: "", q: "", isCustomer }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
 
   const addToCart = (
     product: ProductResponse,
     multiplier: number,
-    unitName: string
+    unitName: string,
   ) => {
     if (STOCK_SETTING === "false" && product.totalCurrentStock <= 0) {
       toast.error("There are no stock available", {
@@ -496,13 +489,13 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     }
     setCart((prev) => {
       const existing = prev.find(
-        (i) => i.id === product.id && i.selectedUnitName === unitName
+        (i) => i.id === product.id && i.selectedUnitName === unitName,
       );
       if (existing)
         return prev.map((i) =>
           i.id === product.id && i.selectedUnitName === unitName
             ? { ...i, qty: i.qty + 1 }
-            : i
+            : i,
         );
       return [
         ...prev,
@@ -521,12 +514,12 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
 
   const otherChargesTotal = checkoutDetails.otherCharges.reduce(
     (sum, oc) => sum + (oc.amount || 0),
-    0
+    0,
   );
 
   const itemTotal = cart.reduce(
     (acc, i) => acc + i.price * i.qty * (i.convertedQtyMultiplier || 1),
-    0
+    0,
   );
   const grandTotal = itemTotal + otherChargesTotal;
 
@@ -541,9 +534,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
       selectedCustomer.creditLimit &&
       selectedCustomer?.totalDebt > selectedCustomer?.creditLimit;
 
-    if (isOverLimit && user?.isAdmin) {
+    if (isOverLimit && user?.isAdmin && isCustomer) {
       const proceed = window.confirm(
-        "Total debt exceeds credit limit. Do you want to proceed anyway?"
+        "Total debt exceeds credit limit. Do you want to proceed anyway?",
       );
       if (!proceed) return; // Exit the function if they click 'Cancel'
     }
@@ -558,7 +551,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
       if (balance > 0) {
         // Find the index of the account that should absorb the change (showValue: true)
         const cashAccountIndex = finalizedPayments.findIndex(
-          (p) => p.showValue === true
+          (p) => p.showValue === true,
         );
 
         if (cashAccountIndex !== -1) {
@@ -577,7 +570,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             ...finalizedPayments[lastIdx],
             amount: Math.max(
               0,
-              (finalizedPayments[lastIdx].amount || 0) - balance
+              (finalizedPayments[lastIdx].amount || 0) - balance,
             ),
           };
         }
@@ -599,7 +592,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
       }
 
       toast.success(
-        "Sale completed with order no: " + response?.result.payload.id
+        "Sale completed with order no: " + response?.result.payload.id,
       );
       queryClient.invalidateQueries({
         queryKey: ["product-all"],
@@ -621,7 +614,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     setSelectedOtherChargeId("");
 
     const charge = OTHER_CHARGES?.data.find(
-      (c: any) => c.id.toString() === chargeId
+      (c: any) => c.id.toString() === chargeId,
     );
     if (!charge) return;
 
@@ -646,7 +639,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     setCheckoutDetails((prev) => ({
       ...prev,
       otherCharges: prev.otherCharges.map((oc) =>
-        oc.otherChargeId === id ? { ...oc, amount } : oc
+        oc.otherChargeId === id ? { ...oc, amount } : oc,
       ),
     }));
   };
@@ -660,7 +653,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
 
   const addPaymentMethod = (methodId: string) => {
     const method = PAYMENT_METHODS?.data.find(
-      (p: any) => p.id.toString() === methodId
+      (p: any) => p.id.toString() === methodId,
     );
     if (!method) return;
 
@@ -689,12 +682,12 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
 
   const updatePayment = (
     id: number,
-    data: Partial<{ amount: number; referenceId: string }>
+    data: Partial<{ amount: number; referenceId: string }>,
   ) => {
     setCheckoutDetails((prev) => ({
       ...prev,
       payment: prev.payment.map((p) =>
-        p.paymentMethodId === id ? { ...p, ...data } : p
+        p.paymentMethodId === id ? { ...p, ...data } : p,
       ),
     }));
   };
@@ -708,7 +701,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
 
   const totalPaid = checkoutDetails.payment.reduce(
     (acc, p) => acc + (Number(p.amount) || 0),
-    0
+    0,
   );
   const balance = totalPaid - grandTotal;
 
@@ -747,9 +740,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
               setCart((prev) =>
                 prev
                   .map((i) =>
-                    i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i
+                    i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i,
                   )
-                  .filter((i) => i.qty > 0)
+                  .filter((i) => i.qty > 0),
               );
             }}
             removeFromCart={(id: any) =>
@@ -773,8 +766,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="h-[92vh] p-0 rounded-t-[3rem] border-none shadow-2xl"
+              className="h-[92vh] p-0 border-none shadow-2xl"
             >
+              <div className="flex flex-row items-center justify-end h-5"></div>
               <CartSection
                 refetch={() => {
                   refetchCustomers();
@@ -790,9 +784,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                       .map((i) =>
                         i.id === id
                           ? { ...i, qty: Math.max(0, i.qty + delta) }
-                          : i
+                          : i,
                       )
-                      .filter((i) => i.qty > 0)
+                      .filter((i) => i.qty > 0),
                   );
                 }}
                 removeFromCart={(id: any) =>
@@ -919,7 +913,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                           onChange={(e) =>
                             updateChargeAmount(
                               oc.otherChargeId,
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                         />
@@ -956,7 +950,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                   <div className="grid grid-cols-3 gap-3">
                     {PAYMENT_METHODS?.data.map((method) => {
                       const isSelected = checkoutDetails.payment.some(
-                        (p) => p.paymentMethodId === method.id
+                        (p) => p.paymentMethodId === method.id,
                       );
                       return (
                         <button
@@ -967,7 +961,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                             "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 gap-2",
                             isSelected
                               ? "bg-indigo-50 border-indigo-200 opacity-50 cursor-not-allowed"
-                              : "bg-white border-slate-100 hover:border-indigo-400 hover:shadow-md active:scale-95"
+                              : "bg-white border-slate-100 hover:border-indigo-400 hover:shadow-md active:scale-95",
                           )}
                         >
                           <div
@@ -975,7 +969,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                               "p-2 rounded-xl",
                               isSelected
                                 ? "bg-indigo-200 text-indigo-600"
-                                : "bg-slate-50 text-slate-500"
+                                : "bg-slate-50 text-slate-500",
                             )}
                           >
                             <Wallet className="h-5 w-5" />
@@ -1005,7 +999,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                         "group relative bg-white rounded-[1.5rem] border transition-all overflow-hidden",
                         isDeductionTarget
                           ? "border-emerald-200 shadow-md"
-                          : "border-slate-200 shadow-sm"
+                          : "border-slate-200 shadow-sm",
                       )}
                     >
                       {/* 1. Header with Status Pulse */}
@@ -1018,7 +1012,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                                   "h-2 w-2 rounded-full animate-pulse",
                                   isDeductionTarget
                                     ? "bg-emerald-500"
-                                    : "bg-indigo-500"
+                                    : "bg-indigo-500",
                                 )}
                               />
                               <span className="text-xs font-black text-slate-800 uppercase">
@@ -1054,7 +1048,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                                   "h-10 rounded-xl border-none text-sm font-black pl-8 transition-colors",
                                   isDeductionTarget
                                     ? "bg-emerald-50 text-emerald-700"
-                                    : "bg-slate-50 text-indigo-600"
+                                    : "bg-slate-50 text-indigo-600",
                                 )}
                                 value={p.amount || ""}
                                 onChange={(e) =>
@@ -1139,7 +1133,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                         ? "text-emerald-400"
                         : balance > 0
                           ? "text-yellow-400"
-                          : "text-orange-400"
+                          : "text-orange-400",
                     )}
                   >
                     {Math.abs(balance).toLocaleString()}{" "}
@@ -1155,7 +1149,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                       ? "bg-emerald-700 text-white"
                       : balance > 0
                         ? "bg-yellow-700 text-white"
-                        : "bg-orange-700 text-white"
+                        : "bg-orange-700 text-white",
                   )}
                 >
                   <Wallet className="h-6 w-6" />

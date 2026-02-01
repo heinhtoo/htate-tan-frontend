@@ -20,7 +20,7 @@ function POSProductSection({
   addToCart: (
     product: ProductResponse,
     multiplier: number,
-    unitName: string
+    unitName: string,
   ) => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<number>(-1);
@@ -34,14 +34,14 @@ function POSProductSection({
     queryKey: ["product-all"],
     queryFn: () =>
       getProducts({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
   const { data: CATEGORIES } = useQuery({
     queryKey: ["categories-all"],
     queryFn: () =>
       getCategories({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
   const { data: BRANDS } = useQuery({
@@ -101,7 +101,7 @@ function POSProductSection({
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
                 Category
               </span>
-              <ScrollArea className="w-full whitespace-nowrap">
+              <ScrollArea className="w-full whitespace-nowrap max-w-[90%]">
                 <div className="flex gap-2 pb-2">
                   <Badge
                     variant={selectedCategory === -1 ? "default" : "secondary"}
@@ -114,7 +114,7 @@ function POSProductSection({
                     .filter((item) => {
                       if (selectedBrand !== -1) {
                         return filteredProducts?.find(
-                          (prod) => prod.category.id === item.id
+                          (prod) => prod.category.id === item.id,
                         );
                       } else {
                         return true;
@@ -133,7 +133,7 @@ function POSProductSection({
                       </Badge>
                     ))}
                 </div>
-                <ScrollBar orientation="horizontal" className="invisible" />
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
 
@@ -142,7 +142,7 @@ function POSProductSection({
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
                 Brand
               </span>
-              <ScrollArea className="w-full whitespace-nowrap">
+              <ScrollArea className="w-full whitespace-nowrap max-w-[90%]">
                 <div className="flex gap-2 pb-2">
                   <Badge
                     variant={selectedBrand === -1 ? "default" : "secondary"}
@@ -155,7 +155,7 @@ function POSProductSection({
                     .filter((item) => {
                       if (selectedCategory !== -1) {
                         return filteredProducts?.find(
-                          (prod) => prod.brand.id === item.id
+                          (prod) => prod.brand.id === item.id,
                         );
                       } else {
                         return true;
@@ -174,7 +174,7 @@ function POSProductSection({
                       </Badge>
                     ))}
                 </div>
-                <ScrollBar orientation="horizontal" className="invisible" />
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
           </div>
@@ -218,7 +218,7 @@ function POSProductSection({
                             ? "bg-red-500 text-white"
                             : product.totalCurrentStock < 5
                               ? "bg-orange-100 text-orange-600"
-                              : "bg-emerald-100 text-emerald-600"
+                              : "bg-emerald-100 text-emerald-600",
                         )}
                       >
                         Stock: {product.totalCurrentStock}
