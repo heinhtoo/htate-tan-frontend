@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { FilterX, Plus, Search } from "lucide-react";
@@ -101,7 +101,7 @@ function POSProductSection({
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
                 Category
               </span>
-              <ScrollArea className="w-full whitespace-nowrap">
+              <div className="w-full whitespace-nowrap max-w-[70vw] overflow-x-auto">
                 <div className="flex gap-2 pb-2">
                   <Badge
                     variant={selectedCategory === -1 ? "default" : "secondary"}
@@ -110,7 +110,7 @@ function POSProductSection({
                   >
                     All Categories
                   </Badge>
-                  {CATEGORIES?.data
+                  {CATEGORIES?.data.sort((a,b)=> a.name.localeCompare(b.name))
                     .filter((item) => {
                       if (selectedBrand !== -1) {
                         return filteredProducts?.find(
@@ -133,8 +133,7 @@ function POSProductSection({
                       </Badge>
                     ))}
                 </div>
-                <ScrollBar orientation="horizontal" className="invisible" />
-              </ScrollArea>
+              </div>
             </div>
 
             {/* Brands Section */}
@@ -142,7 +141,7 @@ function POSProductSection({
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 shrink-0">
                 Brand
               </span>
-              <ScrollArea className="w-full whitespace-nowrap">
+              <div className="w-full whitespace-nowrap max-w-[70vw] overflow-x-auto">
                 <div className="flex gap-2 pb-2">
                   <Badge
                     variant={selectedBrand === -1 ? "default" : "secondary"}
@@ -151,7 +150,7 @@ function POSProductSection({
                   >
                     All Brands
                   </Badge>
-                  {BRANDS?.data
+                  {BRANDS?.data.sort((a,b)=> a.name.localeCompare(b.name))
                     .filter((item) => {
                       if (selectedCategory !== -1) {
                         return filteredProducts?.find(
@@ -174,8 +173,7 @@ function POSProductSection({
                       </Badge>
                     ))}
                 </div>
-                <ScrollBar orientation="horizontal" className="invisible" />
-              </ScrollArea>
+              </div>
             </div>
           </div>
         </header>
@@ -226,8 +224,8 @@ function POSProductSection({
                     </div>
                   </div>
                   <div className="p-4 flex flex-col flex-1">
-                    <h3 className="text-xs font-bold text-slate-800 line-clamp-2 mb-2 leading-relaxed h-8">
-                      {product.name}
+                    <h3 className="text-xs font-bold text-slate-800 mb-2 leading-relaxed h-8">
+                      {product.name} [{product.sku}]
                     </h3>
                     <div className="flex items-end justify-between mt-auto">
                       <div>

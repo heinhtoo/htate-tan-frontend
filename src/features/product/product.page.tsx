@@ -47,7 +47,7 @@ export default function ProductPage() {
     queryFn: async () => {
       const data = await getProducts({
         page: page ? page + "" : "0",
-        size: "30",
+        size: "300",
         s: orderBy,
         q: debouncedQuery,
       });

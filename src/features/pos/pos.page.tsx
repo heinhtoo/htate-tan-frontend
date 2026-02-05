@@ -287,7 +287,7 @@ const CartSection = ({
                   <div className="flex justify-between items-start gap-2">
                     <div className="overflow-hidden">
                       <h4 className="text-sm font-black text-slate-800 truncate leading-tight">
-                        {item.name}
+                        [{item.sku}] {item.name} 
                       </h4>
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
                         {item.selectedUnitName}{" "}
