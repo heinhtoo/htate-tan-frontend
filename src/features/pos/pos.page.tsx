@@ -14,6 +14,7 @@ import {
   User,
   Wallet,
   X,
+  XIcon,
 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -775,6 +776,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
               side="bottom"
               className="h-[92vh] p-0 rounded-t-[3rem] border-none shadow-2xl"
             >
+              <Button onClick={()=>{setIsMobileCartOpen(false)}}>
+                <XIcon />
+              </Button>
               <CartSection
                 refetch={() => {
                   refetchCustomers();
