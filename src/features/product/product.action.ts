@@ -30,7 +30,7 @@ async function getProductsFn({
           ? s.map((item) => "&s=" + item).join("")
           : "&s=" + s
         : "") +
-      (q ? "&q=" + q : "")
+      (q ? "&q=" + q : ""),
   );
 
   const data = response.data;
@@ -42,7 +42,7 @@ async function getProductFn({ sku }: { sku: string }) {
     return undefined;
   }
   const response = await axiosClientInstance.get<APIResponse<ProductResponse>>(
-    "/internal/product/" + sku
+    "/internal/product/" + sku,
   );
 
   const data = response.data;
@@ -59,7 +59,7 @@ async function createProductFn({
     "/internal/product/",
     addExtraData({
       ...data,
-    })
+    }),
   );
 
   let isSuccess = false;
@@ -85,7 +85,7 @@ async function updateProductFn({
     addExtraData({
       ...data,
       version,
-    })
+    }),
   );
 
   let isSuccess = false;
@@ -124,8 +124,6 @@ async function restockProductFn({
     productId: number;
     warehouseId: number;
     purchasedQuantity: number;
-    purchasedPrice: number;
-    purchasedCurrency: string;
     purchasedPriceInMMK: number;
   };
 }) {
@@ -134,7 +132,7 @@ async function restockProductFn({
     "/internal/product/restock",
     addExtraData({
       ...payload,
-    })
+    }),
   );
 
   let isSuccess = false;

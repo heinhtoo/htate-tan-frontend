@@ -313,10 +313,16 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
               <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
                 <tr>
                   <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">
-                    Order & Date
+                    Order & Reference
                   </th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">
-                    Customer
+                    Ordered Date
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">
+                    Delivered Method
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400">
+                    {isCustomer ? "Customer" : "Supplier"}
                   </th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 text-center">
                     Status
@@ -347,12 +353,23 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                           #{order.id}
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium">
-                          {new Date(order.createdAt).toLocaleDateString()} ·{" "}
-                          {new Date(order.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {order.remark}
                         </div>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {new Date(order.createdAt).toLocaleDateString("en-ca", {
+                          year: "numeric",
+                          month: "short",
+                          day: "2-digit",
+                        })}{" "}
+                        ·{" "}
+                        {new Date(order.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {order.carGate?.name ?? "မရွေးထားပါ"}
                       </td>
                       <td className="px-4 py-2.5 text-xs font-semibold text-slate-600">
                         {order.customer?.name ?? (

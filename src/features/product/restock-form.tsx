@@ -10,13 +10,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore";
@@ -34,10 +27,6 @@ interface RestockFormProps {
   onSubmitComplete: () => void;
 }
 
-// --- PLACEHOLDERS: Replace with your real data hook for currencies ---
-const currencies = ["MMK", "USD", "EUR", "THB", "SGD"];
-// -------------------------------------------------------------------
-
 export default function RestockForm({
   productId,
   productName,
@@ -51,8 +40,6 @@ export default function RestockForm({
     defaultValues: {
       productId: productId,
       purchasedQuantity: 0,
-      purchasedPrice: 0,
-      purchasedCurrency: "MMK", // Default to base currency
       purchasedPriceInMMK: 0,
       warehouseId: undefined,
     },
@@ -73,7 +60,6 @@ export default function RestockForm({
     const data = {
       ...values,
       purchasedQuantity: Number(values.purchasedQuantity),
-      purchasedPrice: Number(values.purchasedPrice),
       purchasedPriceInMMK: Number(values.purchasedPriceInMMK),
     };
 
@@ -85,7 +71,7 @@ export default function RestockForm({
     }
 
     toast.success(
-      `Restocked ${values.purchasedQuantity} units of ${productName}.`
+      `Restocked ${values.purchasedQuantity} units of ${productName}.`,
     );
 
     onSubmitComplete();
@@ -148,57 +134,6 @@ export default function RestockForm({
             </FormItem>
           )}
         />
-
-        {/* Row 2: Purchase Price (Foreign) & Currency */}
-        <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={control}
-            name="purchasedPrice"
-            render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel>Unit Cost (Foreign/Original)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    {...field}
-                    disabled={isLoading}
-                    onWheelCapture={(e) => e.currentTarget.blur()}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="purchasedCurrency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={isLoading}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="MMK" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {currencies.map((curr) => (
-                      <SelectItem key={curr} value={curr}>
-                        {curr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         {/* Purchased Price in MMK (Base Cost) */}
         <FormField

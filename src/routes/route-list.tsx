@@ -41,7 +41,7 @@ const FinancialReportsPage = () => <div>Financial Reports Page</div>;
 
 function RouteList() {
   const { accessToken, setAccessToken, setUser } = useAuthStore(
-    (state) => state
+    (state) => state,
   );
   const [isLoading, setLoading] = useState(true);
   const [errorDetails, setErrorDetails] = useState<ErrorResponse | null>(null);

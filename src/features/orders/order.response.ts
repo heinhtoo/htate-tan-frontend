@@ -66,10 +66,8 @@ export type OrderResponse = {
 };
 
 export enum OrderStatus {
-  Planned = "Planned",
   Success = "Success",
   Cancelled = "Cancelled",
-  Delivered = "Delivered",
   Pending = "Pending",
   Paid = "Paid",
   PartialPaid = "Partial Paid",

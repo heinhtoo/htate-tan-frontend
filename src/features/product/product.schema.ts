@@ -53,15 +53,6 @@ export const RestockSchema = z.object({
     .int({ message: "Quantity must be a whole number." })
     .min(1, { message: "Quantity must be at least 1." }),
 
-  // --- Purchase/Cost Details ---
-  purchasedPrice: z.coerce
-    .number()
-    .min(0.01, { message: "Purchased price must be greater than zero." }),
-
-  purchasedCurrency: z.string().length(3, {
-    message: "Currency must be a 3-letter code (e.g., USD, MMK).",
-  }),
-
   purchasedPriceInMMK: z.coerce.number().min(0, {
     message: "MMK cost must be non-negative (including 0 for free goods).",
   }),
