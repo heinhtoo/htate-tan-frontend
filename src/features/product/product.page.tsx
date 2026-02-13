@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -19,12 +20,21 @@ import type { ErrorResponse } from "@/lib/actionHelper";
 import { formatCurrency } from "@/lib/currencyHelper";
 import { useErrorStore } from "@/store/error.store";
 import { useQuery } from "@tanstack/react-query";
-import { Edit, Image, PlusCircle, SortAsc, SortDesc } from "lucide-react";
+import {
+  DollarSign,
+  Edit,
+  Image,
+  PlusCircle,
+  SortAsc,
+  SortDesc,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
-import { getProducts, removeProduct } from "./product.action";
+import NumpadDialog from "../pos/numpad-dialog.component";
+import { getProducts, removeProduct, updateProduct } from "./product.action";
 import type { ProductResponse } from "./product.response";
 
 enum ProductOrderByTypes {
@@ -41,6 +51,26 @@ export default function ProductPage() {
   const [orderBy, setOrderBy] = useState("");
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 1000);
+
+  // Bulk selection state
+  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
+    new Set(),
+  );
+  // const [bulkPriceDialogOpen, setBulkPriceDialogOpen] = useState(false); // Unused
+  const [bulkPriceValue, setBulkPriceValue] = useState(0); // Keeping for potential other uses or remove if fully replaced by argument
+  const [numpadConfig, setNumpadConfig] = useState<{
+    open: boolean;
+    title: string;
+    currentValue: number;
+    onConfirm: (value: number) => void;
+    suffix?: string;
+  }>({
+    open: false,
+    title: "",
+    currentValue: 0,
+    onConfirm: () => {},
+    suffix: "",
+  });
 
   const { data, error, refetch } = useQuery({
     queryKey: ["product-type-all", page, orderBy, debouncedQuery],
@@ -78,6 +108,77 @@ export default function ProductPage() {
     });
   };
 
+  // Selection handlers
+  const toggleProductSelection = (productId: number) => {
+    setSelectedProducts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.size === data?.data.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(data?.data.map((p) => p.id) || []));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedProducts(new Set());
+  };
+
+  const handleBulkPriceUpdate = async (priceOverride?: number) => {
+    if (selectedProducts.size === 0) return;
+
+    const priceToUpdate =
+      priceOverride !== undefined ? priceOverride : bulkPriceValue;
+    const toastId = toast.loading(
+      `Updating prices for ${selectedProducts.size} products...`,
+    );
+
+    try {
+      const updatePromises = Array.from(selectedProducts).map(async (id) => {
+        const product = data?.data.find((p) => p.id === id);
+        if (!product) return;
+
+        // Construct payload required by schema
+        const payload = {
+          name: product.name,
+          price: priceToUpdate,
+          description: product.description,
+          imagePath: product.imagePath,
+          lowStockAlertAt: product.lowStockAlertAt,
+          categoryId: product.category?.id || 0,
+          brandId: product.brand?.id || 0,
+          productTypeId: product.productType?.id || 0,
+          groupId: product.group?.id,
+        };
+
+        return updateProduct({
+          sku: product.sku,
+          data: payload,
+          version: product.version,
+        });
+      });
+
+      await Promise.all(updatePromises);
+
+      toast.success("Bulk price update completed", { id: toastId });
+      // setBulkPriceDialogOpen(false); // Removed
+      setSelectedProducts(new Set());
+      refetch();
+    } catch (error) {
+      console.error("Bulk update failed", error);
+      toast.error("Failed to update some products", { id: toastId });
+    }
+  };
+
   return (
     <Card className="m-6 h-full">
       <CardHeader className="flex flex-row justify-between items-center">
@@ -107,6 +208,16 @@ export default function ProductPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={
+                      (data?.data?.length ?? 0) > 0 &&
+                      selectedProducts.size === (data?.data?.length ?? 0)
+                    }
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead className="w-[60px]">Image</TableHead>
                 <TableHead
                   className="cursor-pointer select-none hover:bg-gray-100/50 transition-colors"
@@ -210,6 +321,17 @@ export default function ProductPage() {
                     className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleEdit(product)}
                   >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedProducts.has(product.id)}
+                        onCheckedChange={() =>
+                          toggleProductSelection(product.id)
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Select ${product.name}`}
+                      />
+                    </TableCell>
+
                     {/* 1. Image Column */}
                     <TableCell>
                       <Avatar className="h-10 w-10 border rounded-md">
@@ -323,6 +445,56 @@ export default function ProductPage() {
           }}
         />
       </CardContent>
+
+      {/* Floating Bulk Action Toolbar */}
+      {selectedProducts.size > 0 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-4 animate-in slide-in-from-bottom-5 fade-in z-50">
+          <span className="text-sm font-bold pl-2">
+            {selectedProducts.size} selected
+          </span>
+          <div className="h-4 w-px bg-slate-700" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setBulkPriceValue(0);
+              // setBulkPriceDialogOpen(true); // Removed
+              setNumpadConfig({
+                open: true,
+                title: "Set Bulk Price",
+                currentValue: 0,
+                onConfirm: (value) => {
+                  setBulkPriceValue(value);
+                  setTimeout(() => handleBulkPriceUpdate(value), 0);
+                },
+                suffix: "Ks",
+              });
+            }}
+            className="text-white hover:text-white hover:bg-slate-800 gap-2 h-8"
+          >
+            <DollarSign className="h-4 w-4" />
+            Update Price
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={clearSelection}
+            className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Numpad Dialog for Bulk Price */}
+      <NumpadDialog
+        open={numpadConfig.open}
+        onClose={() => setNumpadConfig((prev) => ({ ...prev, open: false }))}
+        title={numpadConfig.title}
+        currentValue={numpadConfig.currentValue}
+        onConfirm={numpadConfig.onConfirm}
+        suffix={numpadConfig.suffix}
+      />
     </Card>
   );
 }

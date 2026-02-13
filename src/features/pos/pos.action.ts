@@ -13,6 +13,7 @@ async function createPOSOrderFn({
   remark,
   payment,
   isCustomer,
+  globalDiscount
 }: {
   cart: { id: number; price: number; qty: number }[];
   selectedCustomer: CustomerResponse | null;
@@ -26,6 +27,7 @@ async function createPOSOrderFn({
     name: string;
   }[];
   isCustomer: boolean;
+  globalDiscount: number
 }) {
   const response = await axiosClientInstance.post<APIResponse<OrderResponse>>(
     "/common/pos?isCustomer=" + (isCustomer ? "1" : "0"),
@@ -53,6 +55,7 @@ async function createPOSOrderFn({
           amount: item.amount,
         };
       }),
+      globalDiscount
     })
   );
 

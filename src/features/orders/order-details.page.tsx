@@ -2,24 +2,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle2Icon,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
   ChevronDown,
-  ChevronLeft,
+  Clock,
   Coins,
   CreditCard,
+  FileText,
   Package,
   Plus,
   Printer,
   Receipt,
   Save,
   Trash2,
+  TrendingUp,
   Truck,
   User,
-  XIcon,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import PaymentTypeDropdown from "@/components/dropdown/payment-type.dropdown";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +80,7 @@ import { OrderStatus } from "./order.response";
 
 export default function OrderDetailsPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -139,10 +144,11 @@ export default function OrderDetailsPage() {
   const watchedOtherCharges =
     useWatch({ control: form.control, name: "otherCharges" }) || [];
 
-  const watchedDiscount = useMemo(
-    () => watchedItems.reduce((s, p) => s + (Number(p.discountAmount) || 0), 0),
-    [watchedItems],
-  );
+  const watchedDiscount =
+    useWatch({
+      control: form.control,
+      name: "totalAdditionalDiscountAmount",
+    }) || 0;
 
   const totalPaid = useMemo(
     () =>
@@ -324,7 +330,6 @@ export default function OrderDetailsPage() {
         queryClient.invalidateQueries({ queryKey: ["order-details", slug] });
         setIsEditMode(false);
       }
-      // Add a success toast here if you have one
     },
   });
 
@@ -345,12 +350,12 @@ export default function OrderDetailsPage() {
 
   const handlePrintV1 = useReactToPrint({
     contentRef: printRef,
-    documentTitle: "Order - " + order?.response?.data.id,
+    documentTitle: "Order - " + orderData?.id,
   });
 
   const handlePrintV2 = useReactToPrint({
     contentRef: printRefV2,
-    documentTitle: "Order - " + order?.response?.data.id,
+    documentTitle: "Order - " + orderData?.id,
   });
 
   const handlePrint = () => {
@@ -384,176 +389,125 @@ export default function OrderDetailsPage() {
     setDefaultVersion(null);
   };
 
-  // const handlePrint = () => {
-  //   // Define custom size: [width, height] in mm
-  //   const doc = new jsPDF({
-  //     orientation: "portrait",
-  //     unit: "mm",
-  //     format: [155, 185],
-  //   });
-
-  //   // Load Burmese Font
-  //   doc.addFileToVFS("Pyidaungsu.ttf", PYIDAUNGSU_BASE64);
-  //   doc.addFont("Pyidaungsu.ttf", "Pyidaungsu", "normal");
-  //   doc.setFont("Pyidaungsu");
-
-  //   const drawHeader = () => {
-  //     doc.setFontSize(10);
-  //     doc.text(`${orderData?.customer?.name ?? "Walk-In"}`, 12, 52);
-  //     doc.text(
-  //       `${new Date().toLocaleDateString("en-ca", {
-  //         year: "numeric",
-  //         month: "short",
-  //         day: "2-digit",
-  //       })}`,
-  //       105,
-  //       45,
-  //     );
-  //     doc.text(`${orderData?.customer?.address ?? "N/A"}`, 12, 59);
-  //   };
-  //   // --- Info Section ---
-
-  //   // --- Items Table ---
-  //   const tableColumn = ["", "", "", ""];
-  //   const tableRows = watchedItems.map((item) => [
-  //     item.quantity,
-  //     `${item.productSKU ? "[" + item.productSKU + "] " : ""}${item.productName}`,
-  //     parseFloat(item.unitPrice + "").toLocaleString(),
-  //     (item.quantity * item.unitPrice).toLocaleString(),
-  //   ]);
-
-  //   autoTable(doc, {
-  //     startY: 65,
-  //     head: [tableColumn],
-  //     body: tableRows,
-  //     theme: "grid",
-  //     styles: {
-  //       font: "Pyidaungsu",
-  //       fontSize: 9,
-  //       cellPadding: 2,
-  //       lineColor: [0, 0, 0], // Black borders like the physical receipt
-  //       lineWidth: 0,
-  //     },
-  //     headStyles: {
-  //       fillColor: [255, 255, 255], // White background
-  //       textColor: [0, 0, 0], // Black text
-  //       fontStyle: "bold",
-  //       halign: "center",
-  //     },
-  //     columnStyles: {
-  //       0: { cellWidth: 10, halign: "center" }, // No.
-  //       1: { cellWidth: "auto" }, // Particulars
-  //       2: { cellWidth: 20, halign: "center" }, // Quantity
-  //       3: { cellWidth: 25, halign: "right" }, // Unit Price
-  //       4: { cellWidth: 25, halign: "right" }, // Amount
-  //     },
-  //     // Ensure table fills space but leaves room for total
-  //     margin: { left: 10, right: 10 },
-  //     didDrawPage: drawHeader,
-  //   });
-
-  //   doc.setFontSize(10);
-  //   // doc.text("စုစုပေါင်း (Total Amount):", 85, finalY + 5);
-  //   doc.text(`${calculatedPayable.toLocaleString()} Ks`, 143, 180, {
-  //     align: "right",
-  //   });
-
-  //   const blobURL = doc.output("bloburl");
-  //   window.open(blobURL, "_blank");
-  // };
-
   const itemCount = watchedItems.length;
 
   return (
     <>
       <div className="min-h-screen bg-slate-50/50 pb-20 lg:pb-10 overflow-y-auto">
-        {/* --- Sticky Header --- */}
-        <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        {/* --- Header --- */}
+        <header className="sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
+          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
               <Link
                 to="/orders"
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                className="group p-2 -ml-2 hover:bg-slate-100 rounded-full transition-all text-slate-500 hover:text-slate-900"
               >
-                <ChevronLeft size={20} />
+                <ArrowLeft
+                  size={20}
+                  className="group-hover:-translate-x-0.5 transition-transform"
+                />
               </Link>
-              <div>
+              <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm lg:text-lg font-bold text-slate-900">
+                  <h1 className="text-lg font-bold text-slate-900 tracking-tight">
                     Order #{orderData?.id}
                   </h1>
                   <Badge
                     className={cn(
-                      "text-[10px] px-2 py-0 border-none shadow-none",
+                      "text-[10px] px-2 py-0.5 h-5 border-none shadow-none font-bold uppercase tracking-wider",
                       status.color,
                     )}
                   >
                     {orderData?.status}
                   </Badge>
                 </div>
-                <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
-                  Created on{" "}
-                  {orderData?.createdAt
-                    ? new Date(orderData?.createdAt).toLocaleDateString()
-                    : ""}
-                </p>
+                <div className="flex items-center gap-3 text-[10px] text-slate-500 font-medium">
+                  {orderData?.createdAt && (
+                    <span className="flex items-center gap-1">
+                      <Calendar size={10} />
+                      {new Date(orderData.createdAt).toLocaleDateString()}
+                    </span>
+                  )}
+                  {orderData?.createdAt && (
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} />
+                      {new Date(orderData.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {!isEditMode ? (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePrint}
-                    className="hidden sm:flex gap-2"
-                  >
-                    <Printer size={16} /> Print
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-2 rounded-l-none"
-                      >
-                        <ChevronDown size={14} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={handlePrint}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        <span>Print Order</span>
-                      </DropdownMenuItem>
+                  <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handlePrint}
+                      className="h-7 px-3 text-xs font-semibold text-slate-600 hover:bg-white hover:shadow-sm rounded-md transition-all"
+                    >
+                      <Printer size={14} className="mr-1.5" /> Print
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 rounded-md text-slate-500 hover:bg-white hover:shadow-sm"
+                        >
+                          <ChevronDown size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={handlePrint}>
+                          <Printer className="mr-2 h-4 w-4" />
+                          <span>Print Standard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handlePrintV2}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Print Detailed</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigate(`/orders/${slug}/print`);
+                          }}
+                        >
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          <span>Cloud Print</span>
+                        </DropdownMenuItem>
+                        {defaultVersion && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={clearPreference}
+                              className="text-rose-600 focus:text-rose-600 focus:bg-rose-50"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Reset Preferences</span>
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-                      {/* Only show "Clear" if a default is actually set */}
-                      {defaultVersion && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={clearPreference}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Clear Print Preference</span>
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                   {orderData?.status !== "Success" && (
                     <Button
                       size="sm"
                       onClick={() => setIsEditMode(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100"
+                      className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
                     >
-                      Edit & Pay
+                      Edit Order
                     </Button>
                   )}
                 </>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -582,29 +536,35 @@ export default function OrderDetailsPage() {
                         orderStatus: orderData?.status,
                       });
                     }}
+                    className="h-9 px-4 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full"
                   >
-                    Cancel
+                    Discard
                   </Button>
                   <Button
-                    size={"sm"}
+                    size="sm"
                     onClick={handleCancel}
                     disabled={isPending}
-                    className="bg-red-600 hover:bg-red-700 font-bold gap-2"
+                    variant="outline"
+                    className="h-9 px-4 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 font-bold rounded-full text-xs uppercase tracking-wide"
                   >
                     {cancelMutation.isPending ? (
                       "Cancelling..."
                     ) : (
-                      <>
-                        <XIcon className="w-4 h-4" /> Cancel
-                      </>
+                      <>Cancel Order</>
                     )}
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => updateMutation.mutate(form.getValues())}
                     disabled={isPending}
+                    className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
                   >
-                    <Save size={16} className="mr-2" /> Save
+                    {isPending ? (
+                      <Clock size={16} className="animate-spin mr-2" />
+                    ) : (
+                      <Save size={16} className="mr-2" />
+                    )}
+                    Save Changes
                   </Button>
                 </div>
               )}
@@ -614,14 +574,14 @@ export default function OrderDetailsPage() {
 
         <div className="max-w-7xl mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* --- Left Column: Items & Payments --- */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-5">
             {/* Order Contents */}
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white pt-3">
-              <div className="px-6 py-4 border-b flex items-center justify-between">
+            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100 py-0">
+              <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0 z-30">
                 <div className="flex items-center gap-2">
-                  <Package size={18} className="text-slate-400" />
-                  <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-                    Order Contents
+                  <Package size={16} className="text-indigo-500" />
+                  <h2 className="text-xs font-bold text-slate-700 uppercase tracking-widest">
+                    Order Items
                   </h2>
                 </div>
                 {isEditMode && (
@@ -631,11 +591,11 @@ export default function OrderDetailsPage() {
                   >
                     <DrawerTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="rounded-full text-indigo-600 border-indigo-100"
+                        className="h-7 px-3 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors ml-auto"
                       >
-                        <Plus size={14} className="mr-1" /> Add
+                        <Plus size={14} className="mr-1.5" /> Add Product
                       </Button>
                     </DrawerTrigger>
                     <DrawerContent className="h-[90vh] min-h-[90vh]">
@@ -706,33 +666,48 @@ export default function OrderDetailsPage() {
                 )}
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto min-h-[150px]">
                 {/* Desktop Table */}
                 <table className="w-full hidden md:table">
-                  <thead className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase border-b">
+                  <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100">
                     <tr>
-                      <th className="px-6 py-3 text-left">Product</th>
-                      <th className="px-6 py-3 text-center w-24">Qty</th>
-                      <th className="px-6 py-3 text-right">Price</th>
-                      <th className="px-6 py-3 text-right">Discount</th>
-                      <th className="px-6 py-3 text-right">Total</th>
-                      {isEditMode && <th className="px-4"></th>}
+                      <th className="px-5 py-3 text-left w-[40%]">Product</th>
+                      <th className="px-2 py-3 text-center w-[12%]">Qty</th>
+                      <th className="px-2 py-3 text-right w-[15%]">Price</th>
+                      {/* <th className="px-2 py-3 text-right w-[15%]">Disc.</th> */}
+                      <th className="px-5 py-3 text-right w-[18%]">Total</th>
+                      {isEditMode && <th className="px-2 w-10"></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
+                    {fields.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="py-12 text-center text-slate-400 text-sm italic bg-slate-50/30"
+                        >
+                          No items in this order.
+                        </td>
+                      </tr>
+                    )}
                     {fields.map((field, index) => (
                       <tr
                         key={field.id}
-                        className="group hover:bg-slate-50/30 transition-colors"
+                        className="group hover:bg-slate-50 transition-colors"
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-3">
                           <div className="flex flex-row items-center gap-3">
-                            <img
-                              src={field.productImage}
-                              className="w-14 h-14 max-w-14 max-h-14"
-                            />
-                            <div>
-                              <p className="font-semibold text-slate-800">
+                            <div className="relative overflow-hidden rounded-lg w-10 h-10 border border-slate-100 bg-white shrink-0">
+                              <img
+                                src={field.productImage}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-sm text-slate-700 truncate">
                                 {field.productName}
                               </p>
                               <p className="text-[10px] text-slate-400 font-mono">
@@ -741,11 +716,11 @@ export default function OrderDetailsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-2 py-3">
                           <Input
                             type="number"
                             disabled={!isEditMode}
-                            className="h-8 text-center font-bold bg-transparent border-slate-200 focus:bg-white"
+                            className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                             value={watchedItems[index]?.quantity || 0}
                             onChange={(e) => {
                               form.setValue(
@@ -755,7 +730,7 @@ export default function OrderDetailsPage() {
                             }}
                           />
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-2 py-3">
                           <Input
                             type="number"
                             disabled={!isEditMode}
@@ -766,10 +741,10 @@ export default function OrderDetailsPage() {
                                 e.currentTarget.valueAsNumber,
                               );
                             }}
-                            className="h-8 text-right font-bold bg-transparent border-slate-200 focus:bg-white"
+                            className="h-8 text-right font-medium bg-transparent border-transparent hover:border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                           />
                         </td>
-                        <td className="px-6 py-4">
+                        {/* <td className="px-2 py-3">
                           <Input
                             type="number"
                             disabled={!isEditMode}
@@ -780,10 +755,10 @@ export default function OrderDetailsPage() {
                                 e.currentTarget.valueAsNumber,
                               );
                             }}
-                            className="h-8 text-right font-bold bg-transparent border-slate-200 focus:bg-white"
+                            className="h-8 text-right font-medium bg-transparent border-transparent hover:border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1 text-rose-500"
                           />
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-slate-900">
+                        </td> */}
+                        <td className="px-5 py-3 text-right font-bold text-slate-900 text-sm">
                           {(
                             form.watch(`items.${index}.quantity`) *
                               form.watch(`items.${index}.unitPrice`) -
@@ -791,14 +766,14 @@ export default function OrderDetailsPage() {
                           ).toLocaleString()}
                         </td>
                         {isEditMode && (
-                          <td className="px-4">
+                          <td className="px-2 text-center">
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => remove(index)}
-                              className="text-slate-300 hover:text-rose-500 transition-colors"
+                              className="h-7 w-7 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                             >
-                              <Trash2 size={16} />
+                              <X size={14} />
                             </Button>
                           </td>
                         )}
@@ -808,59 +783,64 @@ export default function OrderDetailsPage() {
                 </table>
 
                 {/* Mobile Card List */}
-                <div className="md:hidden divide-y">
+                <div className="md:hidden divide-y divide-slate-50">
                   {fields.map((field, index) => (
                     <div key={field.id} className="p-4 space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-slate-800">
-                            {field.productName}
-                          </p>
-                          <p className="text-[10px] font-mono text-slate-400">
-                            {field.productSKU}
-                          </p>
-                        </div>
-                        {isEditMode && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => remove(index)}
-                            className="text-rose-500 h-8 w-8 p-0"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">
-                            Qty
-                          </span>
-                          <Input
-                            type="number"
-                            disabled={!isEditMode}
-                            className="h-9"
-                            value={watchedItems[index]?.quantity || 0}
-                            onChange={(e) => {
-                              form.setValue(
-                                `items.${index}.quantity`,
-                                e.currentTarget.valueAsNumber,
-                              );
-                            }}
-                            onWheelCapture={(e) => e.currentTarget.blur()}
-                          />
-                        </div>
-                        <div className="space-y-1 text-right">
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">
-                            Unit Price
-                          </span>
-                          <Input
-                            type="number"
-                            disabled={!isEditMode}
-                            {...form.register(`items.${index}.unitPrice`)}
-                            className="h-9 text-right"
-                            onWheelCapture={(e) => e.currentTarget.blur()}
-                          />
+                      <div className="flex gap-3">
+                        <img
+                          src={field.productImage}
+                          className="w-12 h-12 rounded-lg object-cover bg-slate-100"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-sm text-slate-800 truncate">
+                                {field.productName}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                {field.productSKU}
+                              </p>
+                            </div>
+                            {isEditMode && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => remove(index)}
+                                className="h-6 w-6 p-0 text-slate-300 hover:text-rose-500"
+                              >
+                                <X size={16} />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center border rounded-md">
+                              <Input
+                                type="number"
+                                disabled={!isEditMode}
+                                className="h-7 w-12 text-center border-none text-xs font-bold p-0"
+                                value={watchedItems[index]?.quantity || 0}
+                                onChange={(e) =>
+                                  form.setValue(
+                                    `items.${index}.quantity`,
+                                    e.currentTarget.valueAsNumber,
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="text-xs text-slate-400">x</div>
+                            <div className="font-bold text-sm">
+                              {(
+                                watchedItems[index]?.unitPrice || 0
+                              ).toLocaleString()}
+                            </div>
+                            <div className="flex-1 text-right font-bold text-indigo-600">
+                              {(
+                                form.watch(`items.${index}.quantity`) *
+                                  form.watch(`items.${index}.unitPrice`) -
+                                form.watch(`items.${index}.discountAmount`)
+                              ).toLocaleString()}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -869,20 +849,20 @@ export default function OrderDetailsPage() {
               </div>
             </Card>
 
-            {/* Other Charge */}
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white pt-3">
-              <div className="px-6 py-4 border-b flex items-center justify-between">
+            {/* Other Charges */}
+            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
+              <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
-                  <Coins size={18} className="text-slate-400" />
-                  <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                  <Coins size={16} className="text-amber-500" />
+                  <h2 className="text-xs font-bold text-slate-700 uppercase tracking-widest">
                     Other Charges
                   </h2>
                 </div>
                 {isEditMode && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="rounded-full text-indigo-600 border-indigo-100"
+                    className="h-7 px-3 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors ml-auto"
                     onClick={() =>
                       appendOtherCharge({
                         amount: 0,
@@ -891,25 +871,22 @@ export default function OrderDetailsPage() {
                       } as any)
                     }
                   >
-                    <Plus size={14} className="mr-1" /> Add Charge
+                    <Plus size={14} className="mr-1.5" /> Add Charge
                   </Button>
                 )}
               </div>
               <div className="p-0">
                 {otherChargesField.length === 0 && (
-                  <div className="p-8 text-center text-slate-400 text-xs italic">
-                    No additional charges added.
+                  <div className="py-6 text-center text-slate-400 text-[10px] italic">
+                    No additional charges.
                   </div>
                 )}
                 {otherChargesField.map((field, index) => (
                   <div
                     key={field.id}
-                    className="flex flex-col md:flex-row gap-4 p-4 border-b last:border-0 items-end md:items-center animate-in fade-in"
+                    className="flex items-center gap-3 p-3 border-b last:border-0 hover:bg-slate-50/50 transition-colors"
                   >
-                    <div className="w-full md:flex-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block md:hidden">
-                        Charge Type
-                      </label>
+                    <div className="flex-1">
                       <OtherChargeDropdown
                         disabled={!isEditMode}
                         value={form.watch(
@@ -923,31 +900,26 @@ export default function OrderDetailsPage() {
                         }}
                       />
                     </div>
-                    <div className="w-full md:w-48">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block md:hidden">
-                        Amount
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          disabled={!isEditMode}
-                          {...form.register(`otherCharges.${index}.amount`)}
-                          className="h-9 text-right font-bold pr-8"
-                          onWheelCapture={(e) => e.currentTarget.blur()}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
-                          Ks
-                        </span>
-                      </div>
+                    <div className="w-32 relative">
+                      <Input
+                        type="number"
+                        disabled={!isEditMode}
+                        {...form.register(`otherCharges.${index}.amount`)}
+                        className="h-8 text-right font-bold pr-7 text-xs bg-white"
+                        onWheelCapture={(e) => e.currentTarget.blur()}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
+                        K
+                      </span>
                     </div>
                     {isEditMode && (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => removeOtherCharge(index)}
-                        className="text-slate-300 hover:text-rose-500 transition-colors"
+                        className="h-8 w-8 text-slate-300 hover:text-rose-500 transition-colors"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </Button>
                     )}
                   </div>
@@ -956,34 +928,20 @@ export default function OrderDetailsPage() {
             </Card>
 
             {/* Transaction Card */}
-            {/* Transaction Card */}
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
-              <div className="px-6 py-5 border-b flex items-center justify-between bg-slate-50/50">
+            {/* Payment Records */}
+            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
+              <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-                    <CreditCard size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-                      Payment Records
-                    </h2>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      {calculatedPayable - totalPaid <= 0
-                        ? "Order fully paid"
-                        : `Remaining: ${(calculatedPayable - totalPaid).toLocaleString()} Ks`}
-                    </p>
-                  </div>
+                  <CreditCard size={16} className="text-emerald-500" />
+                  <h2 className="text-xs font-bold text-slate-700 uppercase tracking-widest">
+                    Payments
+                  </h2>
                 </div>
-
-                {isEditMode && (
+                {isEditMode && remainingAmount > 0 && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    disabled={remainingAmount <= 0}
-                    className={cn(
-                      "rounded-full border-indigo-200 text-indigo-600",
-                      remainingAmount <= 0 && "opacity-50 cursor-not-allowed",
-                    )}
+                    className="h-7 px-3 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors ml-auto"
                     onClick={() => {
                       if (remainingAmount > 0) {
                         appendPayment({
@@ -994,17 +952,15 @@ export default function OrderDetailsPage() {
                       }
                     }}
                   >
-                    <Plus size={14} className="mr-1" /> Add Payment
+                    <Plus size={14} className="mr-1.5" /> Add Payment
                   </Button>
                 )}
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-0 divide-y divide-slate-50">
                 {paymentFields.length === 0 && (
-                  <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
-                    <p className="text-xs text-slate-400 italic">
-                      No payments recorded yet.
-                    </p>
+                  <div className="py-8 text-center text-slate-400 text-[10px] italic bg-slate-50/30">
+                    No payments recorded yet.
                   </div>
                 )}
 
@@ -1016,28 +972,26 @@ export default function OrderDetailsPage() {
                     <div
                       key={field.id}
                       className={cn(
-                        "relative group rounded-[1.5rem] border-2 transition-all duration-200",
-                        isCompleted
-                          ? "bg-emerald-50/30 border-emerald-100"
-                          : "bg-white border-slate-100 shadow-sm",
+                        "flex flex-col md:flex-row md:items-center gap-3 p-4 transition-colors",
+                        isCompleted ? "bg-emerald-50/10" : "bg-white",
                       )}
                     >
-                      {/* Status Indicator Tag */}
-                      <div
-                        className={cn(
-                          "absolute -top-2.5 left-6 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                          isCompleted
-                            ? "bg-emerald-500 text-white border-emerald-500"
-                            : "bg-amber-400 text-white border-amber-400",
+                      {/* Status Icon */}
+                      <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 shrink-0">
+                        {isCompleted ? (
+                          <CheckCircle2
+                            size={16}
+                            className="text-emerald-500"
+                          />
+                        ) : (
+                          <Clock size={16} className="text-amber-500" />
                         )}
-                      >
-                        {isCompleted ? "Captured" : "Pending"}
                       </div>
 
-                      <div className="p-5 pt-6 flex flex-col md:flex-row gap-4 items-start md:items-center">
-                        {/* Payment Method Selector */}
-                        <div className="w-full md:w-1/3">
-                          <label className="text-[10px] font-black text-slate-400 uppercase mb-1.5 block">
+                      {/* Method & Ref */}
+                      <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">
                             Method
                           </label>
                           <PaymentTypeDropdown
@@ -1053,83 +1007,89 @@ export default function OrderDetailsPage() {
                             }
                           />
                         </div>
-
-                        {/* Reference & Amount Inputs */}
-                        <div className="flex-1 w-full grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase block">
-                              Reference ID
-                            </label>
-                            <Input
-                              disabled={!isEditMode || isCompleted}
-                              {...form.register(
-                                `payments.${index}.referenceId`,
-                              )}
-                              placeholder="Txn # / Ref ID"
-                              className="h-10 bg-white/50 border-slate-200 rounded-xl text-xs"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase block">
-                              Amount
-                            </label>
-                            <div className="relative">
-                              <Input
-                                type="number"
-                                disabled={!isEditMode || isCompleted}
-                                {...form.register(`payments.${index}.amount`)}
-                                className="h-10 text-right font-black bg-white/50 border-slate-200 rounded-xl pr-8 text-indigo-600"
-                                onWheelCapture={(e) => e.currentTarget.blur()}
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
-                                Ks
-                              </span>
-                            </div>
-                          </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">
+                            Reference
+                          </label>
+                          <Input
+                            disabled={!isEditMode || isCompleted}
+                            {...form.register(`payments.${index}.referenceId`)}
+                            placeholder="Ref ID"
+                            className="h-9 bg-white border-slate-200 rounded-lg text-xs"
+                          />
                         </div>
+                      </div>
 
-                        {/* Action Buttons */}
-                        {isEditMode && (
-                          <div className="flex items-center gap-1 md:pt-5">
+                      {/* Amount */}
+                      <div className="w-full md:w-32">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">
+                          Amount
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            disabled={!isEditMode || isCompleted}
+                            {...form.register(`payments.${index}.amount`)}
+                            className={cn(
+                              "h-9 text-right font-bold pr-7 text-xs rounded-lg",
+                              isCompleted
+                                ? "text-emerald-600 bg-emerald-50/50 border-emerald-100"
+                                : "text-slate-900",
+                            )}
+                            onWheelCapture={(e) => e.currentTarget.blur()}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
+                            K
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      {isEditMode && (
+                        <div className="flex items-end justify-end gap-1 pt-4 md:pt-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-lg transition-colors",
+                              isCompleted
+                                ? "text-amber-500 hover:bg-amber-50"
+                                : "text-emerald-500 hover:bg-emerald-50",
+                            )}
+                            onClick={() => {
+                              const nextStatus = isCompleted
+                                ? "pending"
+                                : "completed";
+                              form.setValue(
+                                `payments.${index}.status`,
+                                nextStatus,
+                              );
+                            }}
+                            title={
+                              isCompleted
+                                ? "Mark as Pending"
+                                : "Mark as Completed"
+                            }
+                          >
+                            {isCompleted ? (
+                              <X size={16} />
+                            ) : (
+                              <CheckCircle2 size={16} />
+                            )}
+                          </Button>
+
+                          {!isCompleted && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={cn(
-                                "h-10 w-10 rounded-xl transition-colors",
-                                isCompleted
-                                  ? "text-rose-400 hover:bg-rose-50"
-                                  : "text-emerald-500 hover:bg-emerald-50",
-                              )}
-                              onClick={() => {
-                                const nextStatus = isCompleted
-                                  ? "pending"
-                                  : "completed";
-                                form.setValue(
-                                  `payments.${index}.status`,
-                                  nextStatus,
-                                );
-                              }}
+                              onClick={() => removePayment(index)}
+                              className="h-8 w-8 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50"
                             >
-                              {isCompleted ? (
-                                <XIcon size={18} />
-                              ) : (
-                                <CheckCircle2Icon size={18} />
-                              )}
+                              <Trash2 size={16} />
                             </Button>
-
-                            {!isCompleted && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removePayment(index)}
-                                className="h-10 w-10 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50"
-                              >
-                                <Trash2 size={18} />
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1138,117 +1098,139 @@ export default function OrderDetailsPage() {
           </div>
 
           {/* --- Right Column: Summary & Sidebar --- */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Customer & Logistics */}
-            <Card className="border-none shadow-sm rounded-2xl p-5 space-y-5 bg-white">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <User size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                    Customer
-                  </p>
-                  <p className="text-sm font-bold text-slate-800">
-                    {orderData?.customer?.name || "Walk-in"}
-                  </p>
-                </div>
-              </div>
-
-              <Separator className="bg-slate-50" />
-
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                  <Truck size={20} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                    Logistics / Gate
-                  </p>
-                  {isEditMode ? (
-                    <Select
-                      onValueChange={(v) =>
-                        form.setValue("carGateId", parseInt(v))
-                      }
-                    >
-                      <SelectTrigger className="mt-1 h-9 rounded-lg border-slate-200">
-                        <SelectValue placeholder="Select Gate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CAR_GATES?.data.map((gate) => (
-                          <SelectItem key={gate.id} value={gate.id.toString()}>
-                            {gate.gateName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm font-bold text-slate-800">
-                      {orderData?.carGate?.name || "Standard Shipping"}
+          <div className="lg:col-span-4 space-y-5">
+            {/* Customer & Logistics - Combined Card */}
+            <Card className="border-none shadow-sm rounded-2xl p-0 bg-white ring-1 ring-slate-100 overflow-hidden">
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Customer
                     </p>
-                  )}
-                </div>
-              </div>
-              <Separator className="bg-slate-50" />
-
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center text-slate-600">
-                  <Package size={20} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                    Order Status
-                  </p>
-                  {isEditMode ? (
-                    <Select
-                      value={form.watch("orderStatus") as string}
-                      onValueChange={(v) => form.setValue("orderStatus", v)}
-                    >
-                      <SelectTrigger className="mt-1 h-9 rounded-lg border-slate-200">
-                        <SelectValue placeholder="Select Order Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.values(OrderStatus)
-                          .filter((item) => item !== OrderStatus.Cancelled)
-                          .map((orderStatus) => (
-                            <SelectItem key={orderStatus} value={orderStatus}>
-                              {orderStatus}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
                     <p className="text-sm font-bold text-slate-800">
-                      {orderData?.status}
+                      {orderData?.customer?.name || "Walk-in Customer"}
                     </p>
-                  )}
+                  </div>
+                </div>
+
+                <Separator className="bg-slate-50" />
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Truck size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Logistics
+                    </p>
+                    {isEditMode ? (
+                      <div className="h-8">
+                        <Select
+                          onValueChange={(v) =>
+                            form.setValue("carGateId", parseInt(v))
+                          }
+                          defaultValue={orderData?.carGate?.id?.toString()}
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-slate-50 border-slate-200 focus:bg-white focus:ring-1 focus:ring-indigo-200">
+                            <SelectValue placeholder="Select Gate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CAR_GATES?.data.map((gate) => (
+                              <SelectItem
+                                key={gate.id}
+                                value={gate.id.toString()}
+                                className="text-xs"
+                              >
+                                {gate.gateName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        {orderData?.carGate?.name || "Standard Shipping"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Separator className="bg-slate-50" />
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Package size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Order Status
+                    </p>
+                    {isEditMode ? (
+                      <div className="h-8">
+                        <Select
+                          value={form.watch("orderStatus") as string}
+                          onValueChange={(v) => form.setValue("orderStatus", v)}
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-slate-50 border-slate-200 focus:bg-white focus:ring-1 focus:ring-indigo-200">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(OrderStatus)
+                              .filter((item) => item !== OrderStatus.Cancelled)
+                              .map((orderStatus) => (
+                                <SelectItem
+                                  key={orderStatus}
+                                  value={orderStatus}
+                                  className="text-xs"
+                                >
+                                  {orderStatus}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="font-bold text-slate-700 bg-slate-50 border-slate-200"
+                      >
+                        {orderData?.status}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </Card>
 
             {/* Pricing Summary */}
-            <Card className="border-none shadow-lg rounded-[2rem] bg-slate-900 text-white p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-[60px]" />
+            <Card className="border-none shadow-xl shadow-indigo-100 rounded-[1.5rem] bg-slate-900 text-white p-6 relative overflow-hidden group">
+              {/* Background Effects */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-600/30 transition-all duration-700" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/3" />
 
-              <div className="relative z-10 space-y-6">
+              <div className="relative z-10 space-y-5">
                 <div className="flex items-center gap-2 text-slate-400">
-                  <Receipt size={16} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">
-                    Grand Total
+                  <div className="p-1.5 bg-white/5 rounded-lg backdrop-blur-sm">
+                    <Receipt size={14} />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    Total Payable
                   </span>
                 </div>
 
-                <div className="text-5xl font-black tracking-tighter">
-                  {calculatedPayable.toLocaleString()}
-                  <span className="text-xl ml-2 font-medium opacity-50">
-                    Ks
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black tracking-tight text-white shadow-sm">
+                    {calculatedPayable.toLocaleString()}
                   </span>
+                  <span className="text-sm font-bold text-slate-500">Ks</span>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="space-y-3 pt-4 border-t border-white/5">
                   <div className="flex justify-between text-xs font-medium text-slate-400">
                     <span>Subtotal</span>
-                    <span>
+                    <span className="font-bold text-slate-200">
                       {watchedItems
                         .reduce(
                           (acc, curr) => acc + curr.quantity * curr.unitPrice,
@@ -1260,37 +1242,45 @@ export default function OrderDetailsPage() {
                   </div>
 
                   {isEditMode ? (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-indigo-400">
-                        Adjust Discount
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-[9px] font-bold uppercase text-indigo-300 tracking-wider">
+                        Additional Discount
                       </label>
-                      <Input
-                        type="number"
-                        {...form.register("totalAdditionalDiscountAmount")}
-                        className="bg-white/5 border-white/10 h-10 font-bold focus:ring-indigo-500"
-                        onWheelCapture={(e) => e.currentTarget.blur()}
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          {...form.register("totalAdditionalDiscountAmount")}
+                          className="bg-white/5 border-white/10 h-8 font-bold text-xs focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 rounded-lg pr-8 text-white placeholder:text-slate-600"
+                          onWheelCapture={(e) => e.currentTarget.blur()}
+                          placeholder="0"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 font-bold">
+                          K
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex justify-between text-xs font-medium text-rose-400">
                       <span>Discount</span>
-                      <span>
+                      <span className="font-bold">
                         - {Number(watchedDiscount).toLocaleString()} Ks
                       </span>
                     </div>
                   )}
+                  {/* Divider */}
+                  <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
 
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase">
-                      Balance Due
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Remaining
                     </span>
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-sm px-3 py-1 font-black",
+                        "text-xs px-2.5 py-0.5 font-bold border rounded-lg",
                         calculatedPayable - totalPaid <= 0
-                          ? "border-emerald-500 text-emerald-400"
-                          : "border-rose-500 text-rose-400",
+                          ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                          : "border-rose-500/30 text-rose-400 bg-rose-500/10",
                       )}
                     >
                       {(calculatedPayable - totalPaid).toLocaleString()} Ks
@@ -1301,15 +1291,18 @@ export default function OrderDetailsPage() {
             </Card>
 
             {/* Internal Notes */}
-            <Card className="border-none shadow-sm rounded-2xl p-6 bg-white">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                Internal Remarks
-              </h3>
+            <Card className="border-none shadow-sm rounded-2xl p-5 bg-white ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText size={14} className="text-slate-400" />
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Internal Remarks
+                </h3>
+              </div>
               <Textarea
                 disabled={!isEditMode}
                 {...form.register("remark")}
-                className="resize-none text-xs border-slate-100 min-h-[100px] focus:ring-1 focus:ring-indigo-100"
-                placeholder="No internal notes..."
+                className="resize-none text-xs border-slate-100 min-h-[80px] bg-slate-50/50 focus:bg-white focus:ring-1 focus:ring-indigo-200 rounded-xl"
+                placeholder="Add notes about this order..."
               />
             </Card>
           </div>
@@ -1334,22 +1327,28 @@ export default function OrderDetailsPage() {
           </div>
         )}
       </div>
-      <div style={{ display: "none" }}>
-        <InvoicePrint
-          ref={printRef}
-          orderData={orderData}
-          watchedItems={watchedItems}
-          calculatedPayable={calculatedPayable}
-        />
-        <InvoicePrintV2
-          warehouseAddress={orderData?.warehouse as any}
-          paymentData={orderData?.payments as any}
-          ref={printRefV2}
-          orderData={orderData}
-          watchedItems={watchedItems}
-          calculatedPayable={calculatedPayable}
-          carGate={orderData?.carGate?.name}
-        />
+      {/* Print Components - Rendered off-screen for code-driven capture */}
+      <div
+        className="fixed overflow-hidden opacity-0 pointer-events-none -z-50"
+        style={{ left: "-9999px", top: "0" }}
+      >
+        <div ref={printRef}>
+          <InvoicePrint
+            orderData={orderData}
+            watchedItems={watchedItems}
+            calculatedPayable={calculatedPayable}
+          />
+        </div>
+        <div ref={printRefV2}>
+          <InvoicePrintV2
+            warehouseAddress={orderData?.warehouse as any}
+            paymentData={orderData?.payments as any}
+            orderData={orderData}
+            watchedItems={watchedItems}
+            calculatedPayable={calculatedPayable}
+            carGate={orderData?.carGate?.name}
+          />
+        </div>
       </div>
       <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
         <DialogContent className="sm:max-w-[425px]">

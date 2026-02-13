@@ -12,6 +12,7 @@ import CustomerPage from "@/features/customer/customer.page";
 import DashboardPage from "@/features/dashboard/dashboard.page";
 import MediaPage from "@/features/media/media.page";
 import OrderDetailsPage from "@/features/orders/order-details.page";
+import OrderPrintPage from "@/features/orders/order-print.page";
 import OrdersPage from "@/features/orders/orders.page";
 import OtherChargePage from "@/features/other-charge/other-charge.page";
 import PaymentTypePage from "@/features/payment-type/payment-type.page";
@@ -22,6 +23,7 @@ import ProductDetailsPage from "@/features/product/product-details.page";
 import ProductPage from "@/features/product/product.page";
 import { getProfile } from "@/features/profile/profile.action";
 import Wrapper from "@/features/providers/Wrapper";
+import FinancialReport from "@/features/reports/financial-report";
 import SettingPage from "@/features/setting/setting.page";
 import StaffPage from "@/features/staff/staff.page";
 import UnitConversionPage from "@/features/unit-conversion/unit-conversion.page";
@@ -35,9 +37,6 @@ import type { ErrorResponse } from "../lib/actionHelper";
 import { useAuthStore } from "../store/authStore";
 import AdminRoute from "./AdminRoutes";
 import ProtectedRoute from "./ProtectedRoutes";
-
-// 💡 Placeholder Components for New Routes (You will create these later)
-const FinancialReportsPage = () => <div>Financial Reports Page</div>;
 
 function RouteList() {
   const { accessToken, setAccessToken, setUser } = useAuthStore(
@@ -127,6 +126,7 @@ function RouteList() {
             <Route path="pos" element={<POSPage isCustomer={true} />} />
             <Route path="orders" element={<OrdersPage isCustomer={true} />} />
             <Route path="orders/:slug" element={<OrderDetailsPage />} />
+            <Route path="orders/:slug/print" element={<OrderPrintPage />} />
 
             {/* Inventory & Products Routes */}
 
@@ -151,6 +151,10 @@ function RouteList() {
                 element={<OrderDetailsPage />}
               />
               <Route
+                path="purchase-orders/:slug/print"
+                element={<OrderPrintPage />}
+              />
+              <Route
                 path="suppliers"
                 element={<CustomerPage isCustomer={false} />}
               />
@@ -167,10 +171,7 @@ function RouteList() {
               {/* <Route path="loyalty-levels" element={<LoyaltyLevelsPage />} /> */}
 
               {/* Reports & Finance Routes */}
-              <Route
-                path="reports/finance"
-                element={<FinancialReportsPage />}
-              />
+              <Route path="reports/finance" element={<FinancialReport />} />
 
               <Route path="media" element={<MediaPage />} />
               <Route path="admin-users" element={<AdminPage />} />

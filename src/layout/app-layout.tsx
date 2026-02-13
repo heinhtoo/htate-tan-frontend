@@ -20,6 +20,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import OrderTabs from "@/features/pos/order-tabs.component";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isAdmin } from "@/lib/authHelper";
 import { cn } from "@/lib/utils";
@@ -205,18 +206,6 @@ export default function AppLayout() {
             icon: BarChart3,
             addedDate: new Date(2025, 11, 1),
           },
-          {
-            title: "Payments",
-            url: "/payments",
-            icon: CreditCard,
-            addedDate: new Date(2025, 11, 1),
-          },
-          {
-            title: "Receipts",
-            url: "/receipts",
-            icon: DownloadIcon,
-            addedDate: new Date(2025, 11, 1),
-          },
         ],
       },
     ],
@@ -288,7 +277,7 @@ export default function AppLayout() {
         <SidebarContent className="overflow-y-scroll scrollbar-hide">
           {data.navList
             .filter((item) =>
-              isAdmin(user) ? true : item.isAdminOnly === false
+              isAdmin(user) ? true : item.isAdminOnly === false,
             )
             .map((nav, index) => {
               return (
@@ -430,20 +419,24 @@ export default function AppLayout() {
       <SidebarInset
         className={cn(
           "text-gray-900 transition-all flex flex-col overflow-scroll h-screen scrollbar-hide",
-          isMobile === false && isOpen ? "ml-[17rem]" : ""
+          isMobile === false && isOpen ? "ml-[17rem]" : "",
         )}
       >
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1 text-gray-400" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <NavBreadcrumb />
-          </div>
-          <div className="flex flex-row items-center gap-3 px-4">
-            {/* Necessary buttons */}
-            <UserButton />
-          </div>
-        </header>
+        {pathname.includes("pos") ? (
+          <OrderTabs />
+        ) : (
+          <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1 text-gray-400" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <NavBreadcrumb />
+            </div>
+            <div className="flex flex-row items-center gap-3 px-4">
+              {/* Necessary buttons */}
+              <UserButton />
+            </div>
+          </header>
+        )}
         <main
           className={cn(
             "relative flex h-full transition-all duration-300",
@@ -451,7 +444,7 @@ export default function AppLayout() {
             isPanelOpen ? "md:mr-[400px] flex-col" : "flex-col",
             pathname.includes("/settings")
               ? "sm:overflow-y-auto"
-              : "sm:overflow-y-hidden"
+              : "sm:overflow-y-hidden",
           )}
         >
           <Outlet />

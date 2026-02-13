@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePolling } from "@/hooks/use-pooling";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { isBefore } from "date-fns";
 import { FilterX, Plus, Search } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getBrands } from "../brand/brand.action";
 import { getCategories } from "../category/category.action";
-import { getProducts } from "../product/product.action";
+import { getLastUpdatedAt, getProducts } from "../product/product.action";
 import type { ProductResponse } from "../product/product.response";
+import { usePosStore } from "./pos.store";
 import { UnitSelectionSheet } from "./unit-conversion.sheet";
 
 function POSProductSection({
@@ -20,7 +23,7 @@ function POSProductSection({
   addToCart: (
     product: ProductResponse,
     multiplier: number,
-    unitName: string
+    unitName: string,
   ) => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<number>(-1);
@@ -30,18 +33,40 @@ function POSProductSection({
   const [selectedProductForUnit, setSelectedProductForUnit] =
     useState<ProductResponse | null>(null);
 
-  const { data: PRODUCTS } = useQuery({
+  const { lastUpdatedAt, setLastUpdatedAt } = usePosStore();
+
+  const { data: PRODUCTS, refetch } = useQuery({
     queryKey: ["product-all"],
     queryFn: () =>
       getProducts({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
+
+  usePolling(async () => {
+    const res = await getLastUpdatedAt();
+    const serverTime = res.response?.data.lastUpdatedAt;
+
+    if (!serverTime) return;
+
+    if (isBefore(lastUpdatedAt, serverTime)) {
+      await refetch(); // directly refetch products
+    }
+
+    setLastUpdatedAt(serverTime);
+  }, 3000);
+
+  useEffect(() => {
+    if (PRODUCTS?.data) {
+      usePosStore.getState().syncProducts(PRODUCTS?.data);
+    }
+  }, [PRODUCTS]);
+
   const { data: CATEGORIES } = useQuery({
     queryKey: ["categories-all"],
     queryFn: () =>
       getCategories({ page: "0", size: "0", s: "", q: "" }).then(
-        (r) => r.response
+        (r) => r.response,
       ),
   });
   const { data: BRANDS } = useQuery({
@@ -110,11 +135,12 @@ function POSProductSection({
                   >
                     All Categories
                   </Badge>
-                  {CATEGORIES?.data.sort((a,b)=> a.name.localeCompare(b.name))
+                  {CATEGORIES?.data
+                    .sort((a, b) => a.name.localeCompare(b.name))
                     .filter((item) => {
                       if (selectedBrand !== -1) {
                         return filteredProducts?.find(
-                          (prod) => prod.category.id === item.id
+                          (prod) => prod.category.id === item.id,
                         );
                       } else {
                         return true;
@@ -150,11 +176,12 @@ function POSProductSection({
                   >
                     All Brands
                   </Badge>
-                  {BRANDS?.data.sort((a,b)=> a.name.localeCompare(b.name))
+                  {BRANDS?.data
+                    .sort((a, b) => a.name.localeCompare(b.name))
                     .filter((item) => {
                       if (selectedCategory !== -1) {
                         return filteredProducts?.find(
-                          (prod) => prod.brand.id === item.id
+                          (prod) => prod.brand.id === item.id,
                         );
                       } else {
                         return true;
@@ -186,7 +213,7 @@ function POSProductSection({
           </div>
 
           <ScrollArea className="flex-1 p-4 lg:p-6 max-h-[65vh] ">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-5 pb-28 lg:pb-0">
+            <div className="grid grid-cols-3 xl:grid-cols-6 gap-5 pb-28 lg:pb-0">
               {filteredProducts?.map((product) => (
                 <Card
                   key={product.id}
@@ -216,7 +243,7 @@ function POSProductSection({
                             ? "bg-red-500 text-white"
                             : product.totalCurrentStock < 5
                               ? "bg-orange-100 text-orange-600"
-                              : "bg-emerald-100 text-emerald-600"
+                              : "bg-emerald-100 text-emerald-600",
                         )}
                       >
                         Stock: {product.totalCurrentStock}

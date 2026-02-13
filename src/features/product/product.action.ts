@@ -50,6 +50,16 @@ async function getProductFn({ sku }: { sku: string }) {
   return { data: data.payload };
 }
 
+async function getLastUpdatedAtFn() {
+  const response = await axiosClientInstance.get<
+    APIResponse<{ lastUpdatedAt: string }>
+  >("/internal/product/active-time/last-updated-at");
+
+  const data = response.data;
+
+  return { data: data.payload };
+}
+
 async function createProductFn({
   data,
 }: {
@@ -152,3 +162,4 @@ export const createProduct = withHandler(createProductFn);
 export const updateProduct = withHandler(updateProductFn);
 export const removeProduct = withHandler(removeProductFn);
 export const restockProduct = withHandler(restockProductFn);
+export const getLastUpdatedAt = withHandler(getLastUpdatedAtFn);
