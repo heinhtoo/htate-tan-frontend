@@ -54,6 +54,7 @@ import {
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import Panel from "./panel";
+import { QRButton } from "./qr-button";
 export type NavLink = {
   name: string;
   url: string;
@@ -423,7 +424,7 @@ export default function AppLayout() {
         )}
       >
         {pathname.includes("pos") ? (
-          <OrderTabs />
+          <OrderTabs isCustomer={!pathname.includes("purchase-pos")} />
         ) : (
           <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
@@ -434,6 +435,7 @@ export default function AppLayout() {
             <div className="flex flex-row items-center gap-3 px-4">
               {/* Necessary buttons */}
               <UserButton />
+              <QRButton />
             </div>
           </header>
         )}

@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   AlertCircle,
@@ -496,9 +495,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   const {
     getActiveOrder,
     addToCart: addToCartStore,
-    updateCartQty,
-    setCartItemQty,
-    updateCartItemPrice,
+    updateCartQty: updateCartQtyStore,
+    setCartItemQty: setCartItemQtyStore,
+    updateCartItemPrice: updateCartItemPriceStore,
     removeFromCart: removeFromCartStore,
     setCustomer,
     setCarGate,
@@ -510,10 +509,67 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     removePayment: removePaymentStore,
     setRemark,
     setGlobalDiscount,
-    clearActiveOrder,
+    clearActiveOrder: clearActiveOrderStore,
   } = usePosStore();
 
-  const activeOrder = getActiveOrder();
+  const activeOrder = getActiveOrder(isCustomer);
+
+  const setCartItemQty = (productId: number, qty: number, unitName: string) => {
+    setCartItemQtyStore(productId, qty, unitName, isCustomer);
+  };
+
+  const updateCartItemPrice = (
+    productId: number,
+    price: number,
+    unitName: string,
+  ) => {
+    updateCartItemPriceStore(productId, price, unitName, isCustomer);
+  };
+
+  const updateCartQty = (
+    productId: number,
+    delta: number,
+    unitName: string,
+  ) => {
+    updateCartQtyStore(productId, delta, unitName, isCustomer);
+  };
+
+  const removeFromCart = (productId: number, unitName: string) => {
+    removeFromCartStore(productId, unitName, isCustomer);
+  };
+
+  const addToCart = (
+    product: ProductResponse,
+    multiplier: number,
+    unitName: string,
+  ) => {
+    if (STOCK_SETTING === "false" && product.totalCurrentStock <= 0) {
+      toast.error("There are no stock available", {
+        position: "top-center",
+      });
+      return;
+    }
+    addToCartStore(product, multiplier, unitName, isCustomer);
+    toast.success(`${product.name} added to cart`, {
+      position: "top-center",
+    });
+  };
+
+  const setSelectedCustomer = (customer: any) => {
+    setCustomer(customer, isCustomer);
+  };
+
+  const setSelectedCarGate = (carGateId: number | undefined) => {
+    setCarGate(carGateId, isCustomer);
+  };
+
+  const setSelectedRemark = (remark: string) => {
+    setRemark(remark, isCustomer);
+  };
+
+  const setSelectedGlobalDiscount = (discount: number) => {
+    setGlobalDiscount(discount, isCustomer);
+  };
   const cart = activeOrder?.cart || [];
   const selectedCustomer = activeOrder?.selectedCustomer || null;
   const checkoutDetails = activeOrder?.checkoutDetails || {
@@ -592,23 +648,6 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         (r) => r.response,
       ),
   });
-
-  const addToCart = (
-    product: ProductResponse,
-    multiplier: number,
-    unitName: string,
-  ) => {
-    if (STOCK_SETTING === "false" && product.totalCurrentStock <= 0) {
-      toast.error("There are no stock available", {
-        position: "top-center",
-      });
-      return;
-    }
-    addToCartStore(product, multiplier, unitName);
-    toast.success(`${product.name} added to cart`, {
-      position: "top-center",
-    });
-  };
 
   const otherChargesTotal = checkoutDetails.otherCharges.reduce(
     (sum, oc) => sum + (oc.amount || 0),
@@ -699,7 +738,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         queryKey: ["product-all"],
       });
       refetchCustomers();
-      clearActiveOrder();
+      clearActiveOrderStore(isCustomer);
       setIsMobileCartOpen(false);
       setIsConfirmDialogOpen(false); // Close dialog
     });
@@ -721,11 +760,14 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
       return;
     }
 
-    addOtherChargeStore({
-      otherChargeId: charge.id,
-      amount: 0,
-      name: charge.name,
-    });
+    addOtherChargeStore(
+      {
+        otherChargeId: charge.id,
+        amount: 0,
+        name: charge.name,
+      },
+      isCustomer,
+    );
   };
 
   useEffect(() => {
@@ -740,11 +782,11 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   }, [OTHER_CHARGES, checkoutDetails.otherCharges, checkoutDetails.carGateId]);
 
   const updateChargeAmount = (id: number, amount: number) => {
-    updateOtherChargeAmount(id, amount);
+    updateOtherChargeAmount(id, amount, isCustomer);
   };
 
   const removeOtherCharge = (id: number) => {
-    removeOtherChargeStore(id);
+    removeOtherChargeStore(id, isCustomer);
   };
 
   const addPaymentMethod = (methodId: string) => {
@@ -769,7 +811,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         paymentQR: method.qrPath, // assuming it's in your data
         showValue: method.showValue,
       };
-      addPaymentMethodStore(newPayment);
+      addPaymentMethodStore(newPayment, isCustomer);
     }
   };
 
@@ -777,11 +819,11 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     id: number,
     data: Partial<{ amount: number; referenceId: string }>,
   ) => {
-    updatePaymentStore(id, data);
+    updatePaymentStore(id, data, isCustomer);
   };
 
   const removePayment = (id: number) => {
-    removePaymentStore(id);
+    removePaymentStore(id, isCustomer);
   };
 
   const totalPaid = checkoutDetails.payment.reduce(
@@ -820,13 +862,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             cart={cart}
             customers={CUSTOMERS?.data || []}
             selectedCustomer={selectedCustomer}
-            setSelectedCustomer={setCustomer}
-            updateQty={(id: any, delta: any, unitName: any) => {
-              updateCartQty(id, delta, unitName);
-            }}
-            removeFromCart={(id: any, unitName: any) =>
-              removeFromCartStore(id, unitName)
-            }
+            setSelectedCustomer={setSelectedCustomer}
+            updateQty={updateCartQty}
+            removeFromCart={removeFromCart}
             grandTotal={grandTotal}
             handleCheckout={handleCheckout}
             setNumpadConfig={setNumpadConfig}
@@ -859,7 +897,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                   <XIcon />
                 </Button>
               </div>
-              <OrderTabs />
+              <OrderTabs isCustomer={isCustomer} />
               <CartSection
                 refetch={() => {
                   refetchCustomers();
@@ -868,13 +906,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                 isLoading={isLoading}
                 customers={CUSTOMERS?.data || []}
                 selectedCustomer={selectedCustomer}
-                setSelectedCustomer={setCustomer}
-                updateQty={(id: any, delta: any, unitName: any) => {
-                  updateCartQty(id, delta, unitName);
-                }}
-                removeFromCart={(id: any, unitName: any) =>
-                  removeFromCartStore(id, unitName)
-                }
+                setSelectedCustomer={setSelectedCustomer}
+                updateQty={updateCartQty}
+                removeFromCart={removeFromCart}
                 grandTotal={grandTotal}
                 handleCheckout={handleCheckout}
                 isCustomer={isCustomer}
@@ -918,7 +952,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                 <Truck className="h-3 w-3" /> Car Gate
               </Label>
               <Select
-                onValueChange={(v) => setCarGate(parseInt(v))}
+                onValueChange={(v) => setSelectedCarGate(parseInt(v))}
                 value={checkoutDetails.carGateId?.toString()}
               >
                 <SelectTrigger className="rounded-2xl h-12 bg-slate-50 border-none focus:ring-2 focus:ring-primary/20 transition-all w-full">
@@ -1100,7 +1134,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                   placeholder="Add notes for this order..."
                   className="min-h-[80px] rounded-xl border-slate-200 text-xs resize-none"
                   value={checkoutDetails.remark}
-                  onChange={(e) => setRemark(e.target.value)}
+                  onChange={(e) => setSelectedRemark(e.target.value)}
                 />
               </div>
             </div>
@@ -1120,7 +1154,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                           open: true,
                           title: "Global Discount",
                           currentValue: checkoutDetails.globalDiscount || 0,
-                          onConfirm: (val) => setGlobalDiscount(val),
+                          onConfirm: (val) => setSelectedGlobalDiscount(val),
                           suffix: "Ks",
                         })
                       }

@@ -36,7 +36,7 @@ function ServerPage() {
   const url = data?.frontendUrl || "";
 
   return (
-    <div className="min-w-lg flex flex-col items-center justify-center min-h-[400px] p-6 bg-primary rounded-3xl rounded-l-none border border-gray-200 shadow-sm">
+    <div className="sm:min-w-lg flex flex-col items-center justify-center min-h-[400px] p-6 bg-primary rounded-3xl rounded-l-none border border-gray-200 shadow-sm">
       {/* Header Section */}
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-primary-foreground flex items-center justify-center gap-2">

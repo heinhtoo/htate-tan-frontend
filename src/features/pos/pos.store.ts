@@ -39,73 +39,107 @@ export interface PosOrder {
   selectedCustomer: CustomerResponse | null;
   checkoutDetails: PosCheckoutDetails;
   createdAt: string;
+  isCustomer: boolean;
 }
 
 // Store state and actions
 interface PosStoreState {
   orders: PosOrder[];
-  activeOrderId: string;
   lastUpdatedAt: string;
   setLastUpdatedAt: (lastUpdatedAt: string) => void;
 
   // Order management
-  createOrder: () => void;
-  switchOrder: (orderId: string) => void;
-  deleteOrder: (orderId: string) => void;
+  createOrder: (isCustomer: boolean) => void;
+  switchOrder: (orderId: string, isCustomer: boolean) => void;
+  deleteOrder: (orderId: string, isCustomer: boolean) => void;
 
   // Cart operations
   addToCart: (
     product: ProductResponse,
     multiplier: number,
     unitName: string,
+    isCustomer: boolean,
   ) => void;
-  updateCartQty: (productId: number, delta: number, unitName: string) => void;
-  setCartItemQty: (productId: number, qty: number, unitName: string) => void;
+  updateCartQty: (
+    productId: number,
+    delta: number,
+    unitName: string,
+    isCustomer: boolean,
+  ) => void;
+  setCartItemQty: (
+    productId: number,
+    qty: number,
+    unitName: string,
+    isCustomer: boolean,
+  ) => void;
   updateCartItemPrice: (
     productId: number,
     price: number,
     unitName: string,
+    isCustomer: boolean,
   ) => void;
-  removeFromCart: (productId: number, unitName: string) => void;
+  removeFromCart: (
+    productId: number,
+    unitName: string,
+    isCustomer: boolean,
+  ) => void;
 
   // Customer operations
-  setCustomer: (customer: CustomerResponse | null) => void;
+  setCustomer: (customer: CustomerResponse | null, isCustomer: boolean) => void;
 
   // Checkout details operations
-  setCarGate: (carGateId: number | undefined) => void;
-  addOtherCharge: (charge: {
-    otherChargeId: number;
-    amount: number;
-    name: string;
-  }) => void;
-  updateOtherChargeAmount: (otherChargeId: number, amount: number) => void;
-  removeOtherCharge: (otherChargeId: number) => void;
-  addPaymentMethod: (payment: {
-    paymentMethodId: number;
-    amount: number;
-    referenceId?: string;
-    name: string;
-    paymentQR: string;
-    showValue: boolean;
-  }) => void;
+  setCarGate: (carGateId: number | undefined, isCustomer: boolean) => void;
+  addOtherCharge: (
+    charge: {
+      otherChargeId: number;
+      amount: number;
+      name: string;
+    },
+    isCustomer: boolean,
+  ) => void;
+  updateOtherChargeAmount: (
+    otherChargeId: number,
+    amount: number,
+    isCustomer: boolean,
+  ) => void;
+  removeOtherCharge: (otherChargeId: number, isCustomer: boolean) => void;
+  addPaymentMethod: (
+    payment: {
+      paymentMethodId: number;
+      amount: number;
+      referenceId?: string;
+      name: string;
+      paymentQR: string;
+      showValue: boolean;
+    },
+    isCustomer: boolean,
+  ) => void;
   updatePayment: (
     paymentMethodId: number,
     data: Partial<{ amount: number; referenceId: string }>,
+    isCustomer: boolean,
   ) => void;
-  removePayment: (paymentMethodId: number) => void;
-  setRemark: (remark: string) => void;
-  setGlobalDiscount: (discount: number) => void;
+  removePayment: (paymentMethodId: number, isCustomer: boolean) => void;
+  setRemark: (remark: string, isCustomer: boolean) => void;
+  setGlobalDiscount: (discount: number, isCustomer: boolean) => void;
 
   // Clear order after checkout
-  clearActiveOrder: () => void;
+  clearActiveOrder: (isCustomer: boolean) => void;
 
   // Getters
-  getActiveOrder: () => PosOrder | undefined;
+  getActiveOrder: (isCustomer: boolean) => PosOrder | undefined;
   syncProducts: (products: ProductResponse[]) => void;
+
+  // New state for split active orders
+  activeSalesOrderId: string;
+  activePurchaseOrderId: string;
 }
 
 // Helper to create a new empty order
-const createEmptyOrder = (orderNumber: number): PosOrder => ({
+const createEmptyOrder = (
+  orderNumber: number,
+  isCustomer: boolean,
+): PosOrder => ({
   id: uuidv4(),
   name: `Order #${orderNumber}`,
   cart: [],
@@ -118,58 +152,89 @@ const createEmptyOrder = (orderNumber: number): PosOrder => ({
     globalDiscount: 0,
   },
   createdAt: new Date().toISOString(),
+  isCustomer,
 });
 
 export const usePosStore = create<PosStoreState>()(
   persist(
     (set, get) => ({
-      orders: [createEmptyOrder(1)],
-      activeOrderId: "",
+      orders: [createEmptyOrder(1, true), createEmptyOrder(1, false)],
+      activeSalesOrderId: "",
+      activePurchaseOrderId: "",
       lastUpdatedAt: "",
       setLastUpdatedAt(lastUpdatedAt) {
         set({ lastUpdatedAt });
       },
 
       // Initialize activeOrderId after hydration
-      createOrder: () => {
+      createOrder: (isCustomer: boolean) => {
         const { orders } = get();
-        const newOrder = createEmptyOrder(orders.length + 1);
-        set({
-          orders: [...orders, newOrder],
-          activeOrderId: newOrder.id,
-        });
+        const typeOrders = orders.filter((o) => o.isCustomer === isCustomer);
+        const newOrder = createEmptyOrder(typeOrders.length + 1, isCustomer);
+
+        if (isCustomer) {
+          set({
+            orders: [...orders, newOrder],
+            activeSalesOrderId: newOrder.id,
+          });
+        } else {
+          set({
+            orders: [...orders, newOrder],
+            activePurchaseOrderId: newOrder.id,
+          });
+        }
       },
 
-      switchOrder: (orderId: string) => {
-        set({ activeOrderId: orderId });
+      switchOrder: (orderId: string, isCustomer: boolean) => {
+        if (isCustomer) {
+          set({ activeSalesOrderId: orderId });
+        } else {
+          set({ activePurchaseOrderId: orderId });
+        }
       },
 
-      deleteOrder: (orderId: string) => {
-        const { orders, activeOrderId } = get();
+      deleteOrder: (orderId: string, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
 
-        // Don't allow deleting the last order
-        if (orders.length === 1) {
+        // Don't allow deleting the last order of this type
+        const typeOrders = orders.filter((o) => o.isCustomer === isCustomer);
+        if (typeOrders.length === 1) {
           return;
         }
 
         const updatedOrders = orders.filter((order) => order.id !== orderId);
 
-        // If deleting the active order, switch to the first remaining order
-        const newActiveOrderId =
-          activeOrderId === orderId ? updatedOrders[0].id : activeOrderId;
-
-        set({
-          orders: updatedOrders,
-          activeOrderId: newActiveOrderId,
-        });
+        if (isCustomer) {
+          const newActiveOrderId =
+            activeSalesOrderId === orderId
+              ? updatedOrders.find((o) => o.isCustomer === true)?.id || ""
+              : activeSalesOrderId;
+          set({
+            orders: updatedOrders,
+            activeSalesOrderId: newActiveOrderId,
+          });
+        } else {
+          const newActiveOrderId =
+            activePurchaseOrderId === orderId
+              ? updatedOrders.find((o) => o.isCustomer === false)?.id || ""
+              : activePurchaseOrderId;
+          set({
+            orders: updatedOrders,
+            activePurchaseOrderId: newActiveOrderId,
+          });
+        }
       },
 
       addToCart: (
         product: ProductResponse,
         multiplier: number,
         unitName: string,
+        isCustomer: boolean,
       ) => {
-        const { orders, activeOrderId } = get();
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -206,8 +271,16 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      updateCartQty: (productId: number, delta: number, unitName: string) => {
-        const { orders, activeOrderId } = get();
+      updateCartQty: (
+        productId: number,
+        delta: number,
+        unitName: string,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -227,8 +300,16 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setCartItemQty: (productId: number, qty: number, unitName: string) => {
-        const { orders, activeOrderId } = get();
+      setCartItemQty: (
+        productId: number,
+        qty: number,
+        unitName: string,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -252,8 +333,12 @@ export const usePosStore = create<PosStoreState>()(
         productId: number,
         price: number,
         unitName: string,
+        isCustomer: boolean,
       ) => {
-        const { orders, activeOrderId } = get();
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -271,8 +356,15 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      removeFromCart: (productId: number, unitName: string) => {
-        const { orders, activeOrderId } = get();
+      removeFromCart: (
+        productId: number,
+        unitName: string,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -288,8 +380,14 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setCustomer: (customer: CustomerResponse | null) => {
-        const { orders, activeOrderId } = get();
+      setCustomer: (
+        customer: CustomerResponse | null,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -299,8 +397,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setCarGate: (carGateId: number | undefined) => {
-        const { orders, activeOrderId } = get();
+      setCarGate: (carGateId: number | undefined, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -313,8 +414,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      addOtherCharge: (charge) => {
-        const { orders, activeOrderId } = get();
+      addOtherCharge: (charge, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -340,8 +444,15 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      updateOtherChargeAmount: (otherChargeId: number, amount: number) => {
-        const { orders, activeOrderId } = get();
+      updateOtherChargeAmount: (
+        otherChargeId: number,
+        amount: number,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -360,8 +471,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      removeOtherCharge: (otherChargeId: number) => {
-        const { orders, activeOrderId } = get();
+      removeOtherCharge: (otherChargeId: number, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -380,8 +494,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      addPaymentMethod: (payment) => {
-        const { orders, activeOrderId } = get();
+      addPaymentMethod: (payment, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -407,8 +524,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      updatePayment: (paymentMethodId: number, data) => {
-        const { orders, activeOrderId } = get();
+      updatePayment: (paymentMethodId: number, data, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -427,8 +547,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      removePayment: (paymentMethodId: number) => {
-        const { orders, activeOrderId } = get();
+      removePayment: (paymentMethodId: number, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -447,8 +570,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setRemark: (remark: string) => {
-        const { orders, activeOrderId } = get();
+      setRemark: (remark: string, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -461,8 +587,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setGlobalDiscount: (discount: number) => {
-        const { orders, activeOrderId } = get();
+      setGlobalDiscount: (discount: number, isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -478,8 +607,11 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      clearActiveOrder: () => {
-        const { orders, activeOrderId } = get();
+      clearActiveOrder: (isCustomer: boolean) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
 
         const updatedOrders = orders.map((order) => {
           if (order.id !== activeOrderId) return order;
@@ -501,9 +633,14 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      getActiveOrder: () => {
-        const { orders, activeOrderId } = get();
-        return orders.find((order) => order.id === activeOrderId);
+      getActiveOrder: (isCustomer) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeId = isCustomer ? activeSalesOrderId : activePurchaseOrderId;
+        return (
+          orders.find(
+            (order) => order.id === activeId && order.isCustomer === isCustomer,
+          ) || orders.find((order) => order.isCustomer === isCustomer)
+        );
       },
 
       syncProducts(products) {
@@ -534,13 +671,35 @@ export const usePosStore = create<PosStoreState>()(
     {
       name: "pos-orders-storage",
       onRehydrateStorage: () => (state) => {
-        // Set activeOrderId to first order if not set
+        if (!state) return;
+
+        // Migration: Ensure all existing orders have isCustomer flag
+        state.orders = state.orders.map((o) => ({
+          ...o,
+          isCustomer: o.isCustomer ?? true,
+        }));
+
+        // Initialize activeSalesOrderId if not set
         if (
-          state &&
-          (!state.activeOrderId ||
-            !state.orders.find((o) => o.id === state.activeOrderId))
+          !state.activeSalesOrderId ||
+          !state.orders.find(
+            (o) => o.id === state.activeSalesOrderId && o.isCustomer === true,
+          )
         ) {
-          state.activeOrderId = state.orders[0]?.id || "";
+          state.activeSalesOrderId =
+            state.orders.find((o) => o.isCustomer === true)?.id || "";
+        }
+
+        // Initialize activePurchaseOrderId if not set
+        if (
+          !state.activePurchaseOrderId ||
+          !state.orders.find(
+            (o) =>
+              o.id === state.activePurchaseOrderId && o.isCustomer === false,
+          )
+        ) {
+          state.activePurchaseOrderId =
+            state.orders.find((o) => o.isCustomer === false)?.id || "";
         }
       },
     },
