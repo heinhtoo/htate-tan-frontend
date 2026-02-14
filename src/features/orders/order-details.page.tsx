@@ -9,6 +9,7 @@ import {
   Clock,
   Coins,
   CreditCard,
+  Edit,
   FileText,
   Package,
   Plus,
@@ -496,14 +497,29 @@ export default function OrderDetailsPage() {
                     </DropdownMenu>
                   </div>
 
+                  <Button size="icon" variant={"ghost"} className="flex sm:hidden" onClick={()=>{
+                    navigate(`/orders/${slug}/print`);
+                  }}>
+                    <Printer />
+                  </Button>
+
                   {orderData?.status !== "Success" && (
+                    <>
                     <Button
                       size="sm"
                       onClick={() => setIsEditMode(true)}
-                      className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
+                      className="hidden sm:flex h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
                     >
                       Edit Order
                     </Button>
+                    <Button
+                      size="icon"
+                      onClick={() => setIsEditMode(true)}
+                      className="flex sm:hidden h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
+                    >
+                     <Edit />
+                    </Button>
+                    </>
                   )}
                 </>
               ) : (

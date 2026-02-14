@@ -59,16 +59,59 @@ export default function OrderPrintPage() {
       "--border",
       "--input",
       "--ring",
+      "--chart-1",
+"--chart-2",
+"--chart-3",
+"--chart-4",
+"--chart-5",
+"--destructive-foreground",
+"--destructive",
+"--sidebar",
     ];
+
+    const colorsToOverride = [
+      "--color-red",
+      "--color-orange",
+      "--color-amber",
+      "--color-yellow",
+      "--color-green",
+      "--color-emerald",
+      "--color-teal",
+      "--color-blue",
+      "--color-indigo",
+      "--color-violet",
+      "--color-purple",
+      "--color-rose",
+      "--color-slate",
+      "--color-gray"
+    ]
 
     // Backup and override them
     varsToOverride.forEach((v) => {
       originalVars[v] = root.style.getPropertyValue(v);
-      root.style.setProperty(v, "#000"); // or neutral color
+      root.style.setProperty(v, v.includes("foreground") ? "#000" : "#000"); // or neutral color
+    });
+
+    const colorShade = ["50","100","200",
+      "300",
+      "400",
+      "500",
+      "600",
+      "700",
+      "800",
+      "900"
+    ]
+
+    colorsToOverride.forEach((v) => {
+      colorShade.forEach((c)=> {
+      originalVars[v + "-" + c] = root.style.getPropertyValue(v + "-" + c);
+      root.style.setProperty(v + "-" + c, "#B2B2B2"); // or neutral color  
+      })
+      
     });
 
     // You can also reset to white background etc.
-    root.style.setProperty("--background", "#ffffff");
+    root.style.setProperty("--sidebar", "#ffffff");
     root.style.setProperty("--foreground", "#000000");
 
     // When unmounting, restore them

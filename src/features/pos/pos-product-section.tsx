@@ -213,7 +213,7 @@ function POSProductSection({
           </div>
 
           <ScrollArea className="flex-1 p-4 lg:p-6 max-h-[65vh] ">
-            <div className="grid grid-cols-3 xl:grid-cols-6 gap-5 pb-28 lg:pb-0">
+            <div className="grid grid-cols-2 xl:grid-cols-6 gap-5 pb-28 lg:pb-0">
               {filteredProducts?.map((product) => (
                 <Card
                   key={product.id}
