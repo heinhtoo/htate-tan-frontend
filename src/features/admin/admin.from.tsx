@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { createAdmin, updateAdmin } from "./admin.action";
 import type { AdminResponse } from "./admin.response";
-import { AdminSchema, AdminUpdateSchema } from "./admin.schema";
+import { AdminSchema } from "./admin.schema";
 
 interface AdminFormProps {
   initialData: AdminResponse | null;
@@ -34,7 +34,7 @@ export default function AdminForm({
   const { closePanel } = usePanelStore();
 
   const form = useForm<any>({
-    resolver: zodResolver(isEditing ? AdminUpdateSchema : AdminSchema),
+    resolver: zodResolver(AdminSchema),
     defaultValues: {
       username: initialData?.username ?? "",
       password: "",
@@ -66,7 +66,7 @@ export default function AdminForm({
     toast.success(
       isEditing
         ? `Admin "${values.username}" updated successfully.`
-        : `New Admin "${values.username}" created.`
+        : `New Admin "${values.username}" created.`,
     );
 
     onSubmitComplete();
@@ -92,21 +92,19 @@ export default function AdminForm({
         />
 
         {/* Password */}
-        {!isEditing && (
-          <FormField
-            control={control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" {...field} disabled={isLoading} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Actions */}
         <div className="flex justify-end space-x-2 pt-4">
