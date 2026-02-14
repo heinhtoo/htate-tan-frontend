@@ -55,6 +55,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { usePanelStore } from "@/store/panelStore";
+import { useNavigate } from "react-router";
 import { getCarGates } from "../car-gate/car-gate.action";
 import { getCustomers } from "../customer/customer.action";
 import CustomerForm from "../customer/customer.from";
@@ -664,6 +665,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   const [isLoading, startTransition] = useTransition();
   const [selectedOtherChargeId, setSelectedOtherChargeId] = useState("");
   const [selectedPaymentMethodId] = useState("");
+  const navigate = useNavigate();
 
   function handleCheckout() {
     const isOverLimit =
@@ -673,7 +675,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
       selectedCustomer.creditLimit &&
       selectedCustomer?.totalDebt > selectedCustomer?.creditLimit;
 
-    if (isOverLimit && user?.isAdmin) {
+    if (isOverLimit && user?.isAdmin && isCustomer === true) {
       const proceed = window.confirm(
         "Total debt exceeds credit limit. Do you want to proceed anyway?",
       );
@@ -731,8 +733,19 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         return;
       }
 
-      toast.success(
-        "Sale completed with order no: " + response?.result.payload.id,
+      toast(
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <span>
+            Sale completed with order no: {response?.result.payload.id}
+          </span>
+          <button
+            onClick={() => navigate("/orders/" + response?.result.payload.id)}
+            className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          >
+            Go to Order
+          </button>
+        </div>,
+        { duration: 5000 }, // optional: toast auto-close
       );
       queryClient.invalidateQueries({
         queryKey: ["product-all"],

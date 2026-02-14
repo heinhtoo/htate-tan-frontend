@@ -24,6 +24,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Bar,
   Cell,
@@ -45,6 +46,7 @@ function FinancialReport() {
   const [toDate, setToDate] = useState<Date | undefined>(
     endOfMonth(new Date()),
   );
+  const navigate = useNavigate();
 
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["financial-report", fromDate, toDate],
@@ -400,6 +402,9 @@ function FinancialReport() {
                                   <div
                                     key={oIdx}
                                     className="flex items-center justify-between text-xs py-1"
+                                    onClick={() => {
+                                      navigate("/orders/" + order.id);
+                                    }}
                                   >
                                     <span className="text-slate-500">
                                       {order.receiptNo || `#${order.id}`} -{" "}

@@ -33,6 +33,7 @@ export type OrderResponse = {
     id: string;
     name: string;
     address: string;
+    state: string;
   };
 
   warehouse: {

@@ -371,12 +371,21 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                       <td className="px-4 py-2.5">
                         {order.carGate?.name ?? "မရွေးထားပါ"}
                       </td>
-                      <td className="px-4 py-2.5 text-xs font-semibold text-slate-600">
-                        {order.customer?.name ?? (
-                          <span className="text-slate-300 font-normal">
-                            Walk-in
+                      <td className="px-4 py-2.5 text-xs text-slate-600">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-700">
+                            {order.customer?.name ?? (
+                              <span className="text-slate-400 font-normal italic">
+                                Walk-in
+                              </span>
+                            )}
                           </span>
-                        )}
+                          {order.customer?.state && (
+                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                              {order.customer.state}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <Badge
