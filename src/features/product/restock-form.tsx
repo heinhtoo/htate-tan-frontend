@@ -87,9 +87,6 @@ export default function RestockForm({
         {/* Hidden Field for Product Context */}
         <input type="hidden" {...form.register("productId")} />
 
-        <h3 className="text-lg font-semibold border-b pb-2">
-          Restock: {productName}
-        </h3>
 
         {/* Warehouse Selection */}
         <FormField
@@ -104,6 +101,7 @@ export default function RestockForm({
                   setValue={(value) => {
                     field.onChange(value);
                   }}
+                  disabled={false}
                 />
               </FormControl>
               <FormMessage />

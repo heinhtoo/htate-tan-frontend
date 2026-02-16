@@ -897,7 +897,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         </aside>
 
         {/* MOBILE TRIGGER */}
-        <div className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
+        <div className="lg:hidden fixed bottom-6 left-6 right-6 z-20">
           <Sheet open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
             <SheetTrigger asChild>
               <Button className="w-full h-16 rounded-[2rem] shadow-2xl shadow-primary/30 flex justify-between px-8 text-lg font-black bg-primary">

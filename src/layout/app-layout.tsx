@@ -69,6 +69,7 @@ export default function AppLayout() {
   const { isOpen } = useLayoutStore((state) => state);
   const isMobile = useIsMobile(); // 💡 UPDATED DATA STRUCTURE FOR RETAIL POS
 
+
   const data = {
     user: {
       name: user?.username,

@@ -1,7 +1,7 @@
 import { getRole, isAdmin } from "@/lib/authHelper";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronsUpDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
@@ -15,10 +15,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "../ui/sidebar";
+import { useEffect } from "react";
 
 function AppHeader() {
   const { user } = useAuthStore((state) => state);
+  const { setOpenMobile} = useSidebar();
+  const location = useLocation();
+  const pathname = location.pathname;
+
+
+  useEffect(()=>{
+    setOpenMobile(false);
+  }, [pathname])
 
   return (
     <SidebarHeader>

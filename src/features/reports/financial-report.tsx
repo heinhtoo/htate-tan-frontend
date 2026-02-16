@@ -223,6 +223,7 @@ function FinancialReport() {
                       boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
                       padding: "12px 16px",
                     }}
+                    formatter={(value) => value.toLocaleString()}
                   />
                   <Bar
                     dataKey="collected"
@@ -288,6 +289,7 @@ function FinancialReport() {
                       border: "none",
                       boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
                     }}
+                    formatter={(value) => value.toLocaleString()}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -331,7 +333,7 @@ function FinancialReport() {
           Daily Details Breakdown
         </h3>
         <div className="grid gap-4">
-          {reportData?.map((daily, idx) => (
+          {reportData?.filter((daily) => daily.unpaid.totalAmount > 0 || daily.paymentMethods.reduce((acc, b) => acc + b.totalAmount, 0) > 0).map((daily, idx) => (
             <Card
               key={idx}
               className="border-none shadow-md bg-white rounded-2xl overflow-hidden overflow-hidden"
@@ -384,7 +386,7 @@ function FinancialReport() {
                           <Banknote className="h-4 w-4" /> Collections by Method
                         </h4>
                         <div className="space-y-3">
-                          {daily.paymentMethods.map((pm, pmIdx) => (
+                          {daily.paymentMethods.filter((pm) => pm.totalAmount > 0).map((pm, pmIdx) => (
                             <div
                               key={pmIdx}
                               className="bg-slate-50 rounded-xl p-4 space-y-3"

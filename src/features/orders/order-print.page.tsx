@@ -436,9 +436,9 @@ export default function OrderPrintPage() {
               <SelectTrigger className="w-full h-10 text-sm rounded-xl bg-slate-50 border-slate-200">
                 <SelectValue placeholder="Select Printer" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white text-black">
                 {printers.map((name) => (
-                  <SelectItem key={name} value={name}>
+                  <SelectItem key={name} value={name} className="bg-white text-black">
                     {name}
                   </SelectItem>
                 ))}
