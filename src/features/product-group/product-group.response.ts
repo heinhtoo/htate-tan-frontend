@@ -3,5 +3,5 @@ export type ProductGroupResponse = {
   name: string;
   description: string;
   version: number;
-  product: { id: number; name: string; sku: string }[];
+  brand: { id: number; name: string }[];
 };

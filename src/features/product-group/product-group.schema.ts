@@ -7,7 +7,7 @@ export const ProductGroupSchema = z.object({
   description: z.string().min(1, {
     message: "Description is required",
   }),
-  productIds: z.array(z.number()),
+  brandIds: z.array(z.number()),
 });
 
 export const ModifyPriceSchema = z.object({

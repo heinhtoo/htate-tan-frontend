@@ -133,9 +133,9 @@ export default function ProductGroupPage() {
                     {productGroup.description || "No description provided."}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                    {productGroup.product.map((item) => (
+                    {productGroup.brand.map((item) => (
                       <Badge title={item.name} key={item.id}>
-                        {item.sku}
+                        {item.name}
                       </Badge>
                     ))}
                   </TableCell>

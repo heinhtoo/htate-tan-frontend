@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ProductDropdownMultiple from "@/components/dropdown/product.dropdown-multiple";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,6 +21,8 @@ import { z } from "zod";
 import { createProductGroup, updateProductGroup } from "./product-group.action";
 import type { ProductGroupResponse } from "./product-group.response";
 import { ProductGroupSchema } from "./product-group.schema";
+import BrandDropdown from "@/components/dropdown/brand.dropdown";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProductGroupFormProps {
   initialData: ProductGroupResponse | null;
@@ -36,12 +37,13 @@ export default function ProductGroupForm({
   const { setError } = useErrorStore();
   const { closePanel } = usePanelStore();
 
+  const queryClient = useQueryClient();
   const form = useForm<any>({
     resolver: zodResolver(ProductGroupSchema),
     defaultValues: {
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
-      productIds: initialData?.product.map((item) => item.id) ?? [],
+      brandIds: initialData?.brand.map((item) => item.id) ?? [],
     },
   });
 
@@ -74,6 +76,9 @@ export default function ProductGroupForm({
     );
 
     onSubmitComplete();
+    queryClient.invalidateQueries({
+      queryKey: ["product-all"]
+    })
     closePanel();
   }
 
@@ -122,15 +127,15 @@ export default function ProductGroupForm({
         {/* Image Upload */}
         <FormField
           control={control}
-          name="productIds"
+          name="brandIds"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Products</FormLabel>
+              <FormLabel>Brands</FormLabel>
               <FormControl>
-                <ProductDropdownMultiple
-                  value={field.value}
+                <BrandDropdown
+                  value={field.value.length > 0 ? field.value[0]: undefined}
                   setValue={(value) => {
-                    field.onChange(value);
+                    field.onChange([value]);
                   }}
                 />
               </FormControl>
