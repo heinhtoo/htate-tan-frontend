@@ -34,6 +34,7 @@ export type OrderResponse = {
     name: string;
     address: string;
     state: string;
+    city: string;
   };
 
   warehouse: {

@@ -79,7 +79,7 @@ function CustomerDropdown({
           disabled={disabled ? true : false}
         >
           {value
-            ? data.data.find((item) => item.id === value)?.name
+            ? data.data.find((item) => item.id === value)?.name + (data.data.find((item)=> item.id === value)?.city ? `(${data.data.find((item)=> item.id === value)?.city})`: "")
             : "Select customer..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

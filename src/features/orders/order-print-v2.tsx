@@ -122,7 +122,7 @@ export const InvoicePrintV2 = forwardRef<
                   </span>
                   <span className="mx-1">:</span>
                   <span className="leading-tight">
-                    {orderData?.customer?.name || "Walk-in Customer"}
+                    {orderData?.customer?.name || "Walk-in Customer"} {orderData?.customer?.city ? `(${orderData.customer.city})`: ""}
                   </span>
                 </div>
                 <div className="flex flex-row items-start">

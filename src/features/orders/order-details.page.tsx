@@ -1127,7 +1127,7 @@ export default function OrderDetailsPage() {
                       Customer
                     </p>
                     <p className="text-sm font-bold text-slate-800">
-                      {orderData?.customer?.name || "Walk-in Customer"}
+                      {orderData?.customer?.name || "Walk-in Customer"} {orderData?.customer?.city ? `(${orderData.customer.city})`:""}
                     </p>
                   </div>
                 </div>

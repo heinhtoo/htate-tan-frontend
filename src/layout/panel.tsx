@@ -14,7 +14,7 @@ function Panel() {
   return (
     <aside
       className={cn(
-        "fixed right-0 top-0 bottom-0 w-full md:w-[400px] p-3 transform transition-transform duration-300 ease-in-out flex flex-col",
+        "fixed right-0 top-0 bottom-0 w-full md:w-[400px] z-[999] p-3 transform transition-transform duration-300 ease-in-out flex flex-col",
         isPanelOpen ? "translate-x-0" : "translate-x-full"
       )}
     >
@@ -25,7 +25,7 @@ function Panel() {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <div className="grow p-4 overflow-y-auto max-h-[85vh]">
+        <div className="grow p-4 overflow-y-auto max-h-[85vh] z-[999]">
           {panelContent}
         </div>
       </div>

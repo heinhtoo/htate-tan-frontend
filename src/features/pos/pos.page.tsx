@@ -85,6 +85,7 @@ const CartSection = ({
   setNumpadConfig,
   setCartItemQty,
   updateCartItemPrice,
+  closeCart
 }: any) => {
   const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
@@ -127,6 +128,10 @@ const CartSection = ({
                       {selectedCustomer
                         ? selectedCustomer.name
                         : "Walk-in Customer"}
+
+                        {selectedCustomer && selectedCustomer.city
+                        ? `(${selectedCustomer.city})`
+                        : ""}
                     </span>
                     {selectedCustomer && (
                       <span className="text-[9px] text-slate-400 font-medium tracking-tight">
@@ -139,7 +144,7 @@ const CartSection = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[360px] p-0 shadow-2xl rounded-2xl border-none"
+              className="w-[360px] p-0 shadow-2xl rounded-2xl border-none overflow-y-auto max-h-[320px]"
               align="start"
             >
               <Command className="rounded-2xl">
@@ -147,7 +152,7 @@ const CartSection = ({
                   placeholder="Search client name or phone..."
                   className="h-12 border-none ring-0 focus:ring-0"
                 />
-                <CommandList className="max-h-[320px]">
+                <CommandList className="overflow-y-auto max-h-[320px]">
                   <CommandEmpty className="p-6 text-center text-sm text-slate-400 font-medium">
                     No results found.
                   </CommandEmpty>
@@ -172,7 +177,7 @@ const CartSection = ({
                           />
                           <div className="flex flex-col flex-1">
                             <span className="font-bold text-sm text-slate-900">
-                              {c.name}
+                              {c.name} {c.city ? `(${c.city})`: ""}
                             </span>
                             <span className="text-[10px] text-slate-400">
                               {c.phoneNumber}
@@ -200,6 +205,8 @@ const CartSection = ({
             {!selectedCustomer && (
               <Button
                 onClick={() => {
+                  closeCart();
+                  setOpen(false);
                   openPanel({
                     title: "Create New Customer",
                     content: (
@@ -871,6 +878,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             refetch={() => {
               refetchCustomers();
             }}
+            closeCart={()=>{
+              setIsMobileCartOpen(false);
+            }}
             isLoading={isLoading}
             cart={cart}
             customers={CUSTOMERS?.data || []}
@@ -920,6 +930,9 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                 customers={CUSTOMERS?.data || []}
                 selectedCustomer={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
+                closeCart={()=>{
+                  setIsMobileCartOpen(false);
+                }}
                 updateQty={updateCartQty}
                 removeFromCart={removeFromCart}
                 grandTotal={grandTotal}

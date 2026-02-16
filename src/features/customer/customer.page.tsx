@@ -41,7 +41,7 @@ export default function CustomerPage({ isCustomer }: { isCustomer: boolean }) {
     queryFn: async () => {
       const data = await getCustomers({
         page: page ? page + "" : "0",
-        size: "30",
+        size: "3000",
         s: orderBy,
         q: debouncedQuery,
         isCustomer,

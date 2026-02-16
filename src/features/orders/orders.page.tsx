@@ -380,9 +380,9 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                               </span>
                             )}
                           </span>
-                          {order.customer?.state && (
+                          {order.customer?.city && (
                             <span className="text-[10px] text-slate-400 uppercase tracking-wider">
-                              {order.customer.state}
+                              {order.customer.city}
                             </span>
                           )}
                         </div>
