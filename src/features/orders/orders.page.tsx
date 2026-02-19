@@ -200,7 +200,7 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
           className="rounded-lg font-bold gap-2 h-9 w-full sm:w-auto justify-center"
           asChild
         >
-          <Link to="/pos">
+          <Link to={isCustomer ? "/pos" : "/purchase-pos"}>
             <ShoppingBag className="w-4 h-4" />
             <span className="inline">New Order</span>
           </Link>

@@ -38,7 +38,7 @@ function POSProductSection({
   const { data: PRODUCTS, refetch } = useQuery({
     queryKey: ["product-all"],
     queryFn: () =>
-      getProducts({ page: "0", size: "0", s: "", q: "" }).then(
+      getProducts({ page: "0", size: "300", s: "", q: "" }).then(
         (r) => r.response,
       ),
   });

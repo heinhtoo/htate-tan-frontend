@@ -17,7 +17,6 @@ import OrdersPage from "@/features/orders/orders.page";
 import OtherChargePage from "@/features/other-charge/other-charge.page";
 import PaymentTypePage from "@/features/payment-type/payment-type.page";
 import POSPage from "@/features/pos/pos.page";
-import ProductGroupPage from "@/features/product-group/product-group.page";
 import ProductTypePage from "@/features/product-type/product-type.page";
 import ProductDetailsPage from "@/features/product/product-details.page";
 import ProductPage from "@/features/product/product.page";
@@ -177,7 +176,7 @@ function RouteList() {
               <Route path="admin-users" element={<AdminPage />} />
               <Route path="product-categories" element={<CategoryPage />} />
               <Route path="product-type" element={<ProductTypePage />} />
-              <Route path="product-groups" element={<ProductGroupPage />} />
+              {/* <Route path="product-groups" element={<ProductGroupPage />} /> */}
               <Route path="brands" element={<BrandPage />} />
               <Route path="payment-methods" element={<PaymentTypePage />} />
               <Route path="other-charges" element={<OtherChargePage />} />

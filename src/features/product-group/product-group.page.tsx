@@ -17,11 +17,10 @@ import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
-import { Currency, Edit, PlusCircle } from "lucide-react";
+import { Edit, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
-import ModifyProductGroupForm from "./modify-price-product-group.from";
 import { getProductGroups, removeProductGroup } from "./product-group.action";
 import ProductGroupForm from "./product-group.from";
 import type { ProductGroupResponse } from "./product-group.response";
@@ -66,18 +65,6 @@ export default function ProductGroupPage() {
       content: (
         <ProductGroupForm
           initialData={null}
-          onSubmitComplete={() => refetch()}
-        />
-      ),
-    });
-  };
-
-  const handlePriceChange = (productGroup: ProductGroupResponse) => {
-    openPanel({
-      title: "Modify Price: " + productGroup.name,
-      content: (
-        <ModifyProductGroupForm
-          initialData={productGroup}
           onSubmitComplete={() => refetch()}
         />
       ),
@@ -151,16 +138,7 @@ export default function ProductGroupPage() {
                     >
                       <Edit className="h-4 w-4 text-primary" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePriceChange(productGroup);
-                      }}
-                    >
-                      <Currency className="h-4 w-4 text-primary" />
-                    </Button>
+
                     <DeleteButton
                       deleteAction={async () => {
                         const response = await removeProductGroup({

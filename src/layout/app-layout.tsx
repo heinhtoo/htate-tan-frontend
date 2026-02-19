@@ -41,8 +41,7 @@ import {
   DownloadIcon,
   ImageIcon,
   LayoutDashboard,
-  LockIcon, // New icon for POS
-  Package,
+  LockIcon,
   PackageOpen,
   Scale,
   ShapesIcon, // Renamed from SquareTerminal
@@ -68,7 +67,6 @@ export default function AppLayout() {
   const pathname = location.pathname;
   const { isOpen } = useLayoutStore((state) => state);
   const isMobile = useIsMobile(); // 💡 UPDATED DATA STRUCTURE FOR RETAIL POS
-
 
   const data = {
     user: {
@@ -113,12 +111,12 @@ export default function AppLayout() {
             icon: PackageOpen,
             addedDate: new Date(2025, 1, 28),
           },
-          {
-            title: "Product Groups",
-            url: "/product-groups",
-            icon: Package,
-            addedDate: new Date(2025, 11, 1),
-          },
+          // {
+          //   title: "Product Groups",
+          //   url: "/product-groups",
+          //   icon: Package,
+          //   addedDate: new Date(2025, 11, 1),
+          // },
           // {
           //   title: "Stock & Inventory",
           //   url: "/inventory",

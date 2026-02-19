@@ -32,7 +32,7 @@ async function getProductGroupsFn({
           ? s.map((item) => "&s=" + item).join("")
           : "&s=" + s
         : "") +
-      (q ? "&q=" + q : "")
+      (q ? "&q=" + q : ""),
   );
 
   const data = response.data;
@@ -50,7 +50,7 @@ async function createProductGroupFn({
     "/internal/product-group/",
     addExtraData({
       ...data,
-    })
+    }),
   );
 
   let isSuccess = false;
@@ -78,7 +78,7 @@ async function updateProductGroupFn({
     addExtraData({
       ...data,
       version,
-    })
+    }),
   );
 
   let isSuccess = false;
@@ -120,10 +120,10 @@ async function modifyPriceFn({
   const response = await axiosClientInstance.put<
     APIResponse<ProductGroupResponse>
   >(
-    "/internal/product-group/" + id + "/modify-price",
+    "/internal/brand/" + id + "/modify-price",
     addExtraData({
       ...data,
-    })
+    }),
   );
 
   let isSuccess = false;

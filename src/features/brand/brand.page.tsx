@@ -18,10 +18,11 @@ import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore"; // Assume this is the global store
 import { useQuery } from "@tanstack/react-query";
-import { Edit, Image, PlusCircle } from "lucide-react";
+import { Coins, Edit, Image, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import ErrorPage from "../common/error.page";
+import ModifyProductGroupForm from "../product-group/modify-price-product-group.from";
 import { getBrands, removeBrand } from "./brand.action";
 import BrandForm from "./brand.from";
 import type { BrandResponse } from "./brand.response";
@@ -65,6 +66,19 @@ export default function BrandPage() {
       ),
     });
   };
+
+  const handlePriceChange = (brand: BrandResponse) => {
+    openPanel({
+      title: "Modify Price: " + brand.name,
+      content: (
+        <ModifyProductGroupForm
+          initialData={brand}
+          onSubmitComplete={() => refetch()}
+        />
+      ),
+    });
+  };
+
   const { setError } = useErrorStore();
 
   if (error) {
@@ -144,6 +158,16 @@ export default function BrandPage() {
                       }}
                     >
                       <Edit className="h-4 w-4 text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePriceChange(brand);
+                      }}
+                    >
+                      <Coins className="h-4 w-4 text-primary" />
                     </Button>
                     <DeleteButton
                       deleteAction={async () => {

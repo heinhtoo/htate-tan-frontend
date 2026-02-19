@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useAuthStore } from "@/store/authStore";
 import { useErrorStore } from "@/store/error.store";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
@@ -84,6 +85,7 @@ export default function OrderDetailsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+  const { user } = useAuthStore();
 
   const { data: order } = useQuery({
     queryKey: ["order-details", slug],
@@ -497,28 +499,35 @@ export default function OrderDetailsPage() {
                     </DropdownMenu>
                   </div>
 
-                  <Button size="icon" variant={"ghost"} className="flex sm:hidden" onClick={()=>{
-                    navigate(`/orders/${slug}/print`);
-                  }}>
+                  <Button
+                    size="icon"
+                    variant={"ghost"}
+                    className="flex sm:hidden"
+                    onClick={() => {
+                      navigate(`/orders/${slug}/print`);
+                    }}
+                  >
                     <Printer />
                   </Button>
 
-                  {orderData?.status !== "Success" && (
+                  {((orderData?.status !== "Success" &&
+                    user?.isAdmin === false) ||
+                    user?.isAdmin === true) && (
                     <>
-                    <Button
-                      size="sm"
-                      onClick={() => setIsEditMode(true)}
-                      className="hidden sm:flex h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
-                    >
-                      Edit Order
-                    </Button>
-                    <Button
-                      size="icon"
-                      onClick={() => setIsEditMode(true)}
-                      className="flex sm:hidden h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
-                    >
-                     <Edit />
-                    </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                        className="hidden sm:flex h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
+                      >
+                        Edit Order
+                      </Button>
+                      <Button
+                        size="icon"
+                        onClick={() => setIsEditMode(true)}
+                        className="flex sm:hidden h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-full text-xs font-bold uppercase tracking-wide"
+                      >
+                        <Edit />
+                      </Button>
                     </>
                   )}
                 </>
@@ -1127,7 +1136,10 @@ export default function OrderDetailsPage() {
                       Customer
                     </p>
                     <p className="text-sm font-bold text-slate-800">
-                      {orderData?.customer?.name || "Walk-in Customer"} {orderData?.customer?.city ? `(${orderData.customer.city})`:""}
+                      {orderData?.customer?.name || "Walk-in Customer"}{" "}
+                      {orderData?.customer?.city
+                        ? `(${orderData.customer.city})`
+                        : ""}
                     </p>
                   </div>
                 </div>

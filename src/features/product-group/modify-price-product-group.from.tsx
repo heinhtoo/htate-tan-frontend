@@ -18,12 +18,12 @@ import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import type { BrandResponse } from "../brand/brand.response";
 import { modifyPrice } from "./product-group.action";
-import type { ProductGroupResponse } from "./product-group.response";
 import { ModifyPriceSchema } from "./product-group.schema";
 
 interface ModifyProductGroupFormProps {
-  initialData: ProductGroupResponse | null;
+  initialData: BrandResponse | null;
   onSubmitComplete: () => void;
 }
 

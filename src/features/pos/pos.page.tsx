@@ -85,7 +85,7 @@ const CartSection = ({
   setNumpadConfig,
   setCartItemQty,
   updateCartItemPrice,
-  closeCart
+  closeCart,
 }: any) => {
   const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
@@ -129,7 +129,7 @@ const CartSection = ({
                         ? selectedCustomer.name
                         : "Walk-in Customer"}
 
-                        {selectedCustomer && selectedCustomer.city
+                      {selectedCustomer && selectedCustomer.city
                         ? `(${selectedCustomer.city})`
                         : ""}
                     </span>
@@ -177,7 +177,7 @@ const CartSection = ({
                           />
                           <div className="flex flex-col flex-1">
                             <span className="font-bold text-sm text-slate-900">
-                              {c.name} {c.city ? `(${c.city})`: ""}
+                              {c.name} {c.city ? `(${c.city})` : ""}
                             </span>
                             <span className="text-[10px] text-slate-400">
                               {c.phoneNumber}
@@ -746,7 +746,13 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             Sale completed with order no: {response?.result.payload.id}
           </span>
           <button
-            onClick={() => navigate("/orders/" + response?.result.payload.id)}
+            onClick={() =>
+              navigate(
+                isCustomer
+                  ? "/orders/" + response?.result.payload.id
+                  : "/purchase-orders/" + response?.result.payload.id,
+              )
+            }
             className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
           >
             Go to Order
@@ -878,7 +884,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             refetch={() => {
               refetchCustomers();
             }}
-            closeCart={()=>{
+            closeCart={() => {
               setIsMobileCartOpen(false);
             }}
             isLoading={isLoading}
@@ -930,7 +936,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                 customers={CUSTOMERS?.data || []}
                 selectedCustomer={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
-                closeCart={()=>{
+                closeCart={() => {
                   setIsMobileCartOpen(false);
                 }}
                 updateQty={updateCartQty}
