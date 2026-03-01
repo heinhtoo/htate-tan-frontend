@@ -47,6 +47,10 @@ export const InvoicePrintV2 = forwardRef<
       return <></>;
     }
 
+    const paidAmount = orderData.payments
+      .filter((item: any) => item.status === "completed")
+      .map((item: any) => item.amount)
+      .reduce((acc: any, item: any) => acc + item);
     return (
       <div
         ref={ref}
@@ -163,7 +167,7 @@ export const InvoicePrintV2 = forwardRef<
             </div>
 
             {/* --- Table Section (Reduced height) --- */}
-            <div className="grow px-2 pt-1 z-10">
+            <div className="px-2 pt-1 z-10">
               <table className="w-full text-[10px] border-b border-[#0f172a]">
                 <thead>
                   <tr className="bg-[#f1f5f9]">
@@ -216,7 +220,7 @@ export const InvoicePrintV2 = forwardRef<
                     </tr>
                   ))}
                   {/* Empty row filler to keep table height consistent */}
-                  {Array.from({
+                  {/* {Array.from({
                     length: Math.max(0, ITEMS_PER_PAGE - pageItems.length),
                   }).map((_, i) => (
                     <tr key={i} className="h-7 border-b border-[#f1f5f9]">
@@ -226,7 +230,7 @@ export const InvoicePrintV2 = forwardRef<
                       <td className="border-r border-[#0f172a]"></td>
                       <td className="border-r border-[#0f172a]"></td>
                     </tr>
-                  ))}
+                  ))} */}
                 </tbody>
               </table>
             </div>
@@ -269,12 +273,29 @@ export const InvoicePrintV2 = forwardRef<
                           Ks
                         </span>
                       </div>
-                      <div className="w-full flex justify-between font-black text-base leading-tight border-b-2 border-[#0f172a] pb-1.5">
+
+                      <div className="w-full flex justify-between font-black text-base leading-tight border-b border-[#0f172a] pb-1.5">
                         <span className="text-[9px] self-end mb-0.5 uppercase">
                           Total:
                         </span>
                         <span className="font-mono">
                           {calculatedPayable.toLocaleString()} Ks
+                        </span>
+                      </div>
+                      <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
+                        <span className="text-[9px] self-end mb-0.5 uppercase whitespace-nowrap">
+                          Cash Received:
+                        </span>
+                        <span className="font-mono">
+                          {paidAmount.toLocaleString()} Ks
+                        </span>
+                      </div>
+                      <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
+                        <span className="text-[9px] self-end mb-0.5 uppercase">
+                          Balance:
+                        </span>
+                        <span className="font-mono">
+                          {(calculatedPayable - paidAmount).toLocaleString()} Ks
                         </span>
                       </div>
                     </>
