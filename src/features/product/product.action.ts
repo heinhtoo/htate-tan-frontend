@@ -156,6 +156,51 @@ async function restockProductFn({
   return { isSuccess, result };
 }
 
+async function removeStockFn({ id, stockId }: { id: number; stockId: number }) {
+  const response = await axiosClientInstance.delete<
+    APIResponse<ProductResponse>
+  >("/internal/product/" + id + "/stock/" + stockId);
+
+  let isSuccess = false;
+  if (response.status >= 200 && response.status < 300) {
+    isSuccess = true;
+  }
+
+  const result = response.data;
+  return { isSuccess, result };
+}
+
+async function updateRestockProductFn({
+  stockId,
+  payload,
+}: {
+  stockId: number;
+  payload: {
+    productId: number;
+    warehouseId: number;
+    purchasedQuantity: number;
+    purchasedPriceInMMK: number;
+  };
+}) {
+  // POST request to the restock endpoint
+  const response = await axiosClientInstance.put<APIResponse<MessageResponse>>(
+    "/internal/product/restock/" + stockId,
+    addExtraData({
+      ...payload,
+    }),
+  );
+
+  let isSuccess = false;
+  if (response.status >= 200 && response.status < 300) {
+    isSuccess = true;
+  }
+
+  const result = response.data;
+
+  // The 'result' will contain the newly created StockResponse object upon success.
+  return { isSuccess, result };
+}
+
 export const getProducts = withHandler(getProductsFn);
 export const getProduct = withHandler(getProductFn);
 export const createProduct = withHandler(createProductFn);
@@ -163,3 +208,5 @@ export const updateProduct = withHandler(updateProductFn);
 export const removeProduct = withHandler(removeProductFn);
 export const restockProduct = withHandler(restockProductFn);
 export const getLastUpdatedAt = withHandler(getLastUpdatedAtFn);
+export const removeStock = withHandler(removeStockFn);
+export const updateRestockProduct = withHandler(updateRestockProductFn);

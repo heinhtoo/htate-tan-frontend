@@ -443,7 +443,7 @@ export default function AppLayout() {
             "relative flex h-full transition-all duration-300",
             // 💡 Adjust the width of the main content when the panel is open
             isPanelOpen ? "md:mr-[400px] flex-col" : "flex-col",
-            pathname.includes("/settings")
+            pathname.includes("/settings") || pathname.includes("/products")
               ? "sm:overflow-y-auto"
               : "sm:overflow-y-hidden",
           )}

@@ -5,6 +5,7 @@ export type OrderItemResponse = {
   productSKU: string;
   productImage: string;
   quantity: number;
+  subQuantity: number;
   unitPrice: number;
   discountAmount: number;
   lineTotal: number;
@@ -65,6 +66,8 @@ export type OrderResponse = {
   receiptNo?: string;
 
   createdAt: Date;
+
+  createdBy: string;
 };
 
 export enum OrderStatus {

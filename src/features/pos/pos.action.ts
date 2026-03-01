@@ -13,9 +13,9 @@ async function createPOSOrderFn({
   remark,
   payment,
   isCustomer,
-  globalDiscount
+  globalDiscount,
 }: {
-  cart: { id: number; price: number; qty: number }[];
+  cart: { id: number; price: number; qty: number; subQty: number }[];
   selectedCustomer: CustomerResponse | null;
   carGateId?: number;
   remark?: string;
@@ -27,7 +27,7 @@ async function createPOSOrderFn({
     name: string;
   }[];
   isCustomer: boolean;
-  globalDiscount: number
+  globalDiscount: number;
 }) {
   const response = await axiosClientInstance.post<APIResponse<OrderResponse>>(
     "/common/pos?isCustomer=" + (isCustomer ? "1" : "0"),
@@ -36,6 +36,7 @@ async function createPOSOrderFn({
         return {
           productId: item.id,
           quantity: item.qty,
+          subQuantity: item.subQty,
           unitPrice: item.price,
         };
       }),
@@ -55,8 +56,8 @@ async function createPOSOrderFn({
           amount: item.amount,
         };
       }),
-      globalDiscount
-    })
+      globalDiscount,
+    }),
   );
 
   let isSuccess = false;
@@ -96,7 +97,7 @@ async function confirmPOSOrderFn({
           referenceId: item.referenceId,
         };
       }),
-    })
+    }),
   );
 
   let isSuccess = false;
@@ -113,7 +114,7 @@ export const confirmPOSOrder = withHandler(confirmPOSOrderFn);
 
 async function cancelPOSOrderFn({ id }: { id: number }) {
   const response = await axiosClientInstance.put<APIResponse<OrderResponse>>(
-    "/common/pos/" + id + "/cancel"
+    "/common/pos/" + id + "/cancel",
   );
 
   let isSuccess = false;

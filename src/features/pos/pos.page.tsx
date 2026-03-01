@@ -57,6 +57,7 @@ import { useAuthStore } from "@/store/authStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useNavigate } from "react-router";
 import { getCarGates } from "../car-gate/car-gate.action";
+import CarGateForm from "../car-gate/car-gate.from";
 import { getCustomers } from "../customer/customer.action";
 import CustomerForm from "../customer/customer.from";
 import { getOtherCharges } from "../other-charge/other-charge.action";
@@ -83,6 +84,7 @@ const CartSection = ({
   refetch,
   isCustomer,
   setNumpadConfig,
+  setCartItemSubQty,
   setCartItemQty,
   updateCartItemPrice,
   closeCart,
@@ -283,7 +285,7 @@ const CartSection = ({
                 {/* Desktop/Tablet Layout */}
                 <div className="hidden sm:grid sm:grid-cols-12 gap-2 p-2 items-center">
                   {/* Product Info - 5 cols */}
-                  <div className="col-span-5 flex items-center gap-2 min-w-0">
+                  <div className="col-span-4 flex items-center gap-2 min-w-0">
                     <img
                       src={item.imagePath}
                       className="h-8 w-8 object-contain shrink-0"
@@ -295,6 +297,29 @@ const CartSection = ({
                       </p>
                       <p className="text-[10px] text-slate-400">[{item.sku}]</p>
                     </div>
+                  </div>
+
+                  {/* Quantity - 3 cols */}
+                  <div className="col-span-2">
+                    <button
+                      onClick={() => {
+                        setNumpadConfig({
+                          open: true,
+                          title: "Bags",
+                          currentValue: item.subQty,
+                          onConfirm: (value: number) =>
+                            setCartItemSubQty(
+                              item.id,
+                              value,
+                              item.selectedUnitName,
+                            ),
+                          suffix: "bags",
+                        });
+                      }}
+                      className="w-full px-2 py-1 bg-slate-50 hover:bg-primary/10 border border-slate-200 hover:border-primary/30 rounded text-xs font-bold text-slate-700 hover:text-primary transition-all text-center"
+                    >
+                      {item.subQty}
+                    </button>
                   </div>
 
                   {/* Quantity - 3 cols */}
@@ -344,11 +369,12 @@ const CartSection = ({
                   </div>
 
                   {/* Subtotal - 2 cols */}
-                  <div className="col-span-3 flex items-center justify-between">
+                  <div className="col-span-2 flex items-center justify-between">
                     <p className="text-xs font-bold text-slate-900 text-right flex-1">
                       {(
                         item.price *
                         item.qty *
+                        item.subQty *
                         (item.convertedQtyMultiplier || 1)
                       ).toLocaleString()}
                     </p>
@@ -444,6 +470,7 @@ const CartSection = ({
                         {(
                           item.price *
                           item.qty *
+                          item.subQty *
                           (item.convertedQtyMultiplier || 1)
                         ).toLocaleString()}
                       </p>
@@ -505,6 +532,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     addToCart: addToCartStore,
     updateCartQty: updateCartQtyStore,
     setCartItemQty: setCartItemQtyStore,
+    setCartItemSubQty: setCartItemSubQtyStore,
     updateCartItemPrice: updateCartItemPriceStore,
     removeFromCart: removeFromCartStore,
     setCustomer,
@@ -540,6 +568,14 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
     unitName: string,
   ) => {
     updateCartQtyStore(productId, delta, unitName, isCustomer);
+  };
+
+  const setCartItemSubQty = (
+    productId: number,
+    delta: number,
+    unitName: string,
+  ) => {
+    setCartItemSubQtyStore(productId, delta, unitName, isCustomer);
   };
 
   const removeFromCart = (productId: number, unitName: string) => {
@@ -634,7 +670,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
         (r) => r.response,
       ),
   });
-  const { data: CAR_GATES } = useQuery({
+  const { data: CAR_GATES, refetch: refetchCarGates } = useQuery({
     queryKey: ["car-gate-all"],
     queryFn: () =>
       getCarGates({ page: "0", size: "0", s: "", q: "" }).then(
@@ -663,12 +699,14 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   );
 
   const itemTotal = cart.reduce(
-    (acc, i) => acc + i.price * i.qty * (i.convertedQtyMultiplier || 1),
+    (acc, i) =>
+      acc + i.price * i.qty * i.subQty * (i.convertedQtyMultiplier || 1),
     0,
   );
   const grandTotal =
     itemTotal + otherChargesTotal - (checkoutDetails.globalDiscount || 0);
 
+  const { openPanel } = usePanelStore();
   const [isLoading, startTransition] = useTransition();
   const [selectedOtherChargeId, setSelectedOtherChargeId] = useState("");
   const [selectedPaymentMethodId] = useState("");
@@ -862,7 +900,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
   return (
     <>
       <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
-        <POSProductSection addToCart={addToCart} />
+        <POSProductSection addToCart={addToCart} isCustomer={isCustomer} />
 
         {/* DESKTOP SIDEBAR */}
         <aside className="hidden lg:flex w-[400px] flex-col bg-white border-l shadow-2xl z-20">
@@ -898,6 +936,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
             handleCheckout={handleCheckout}
             setNumpadConfig={setNumpadConfig}
             setCartItemQty={setCartItemQty}
+            setCartItemSubQty={setCartItemSubQty}
             updateCartItemPrice={updateCartItemPrice}
           />
         </aside>
@@ -996,6 +1035,25 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                       {gate.gateName}
                     </SelectItem>
                   ))}
+                  <Button
+                    className="w-full border-t text-xs "
+                    variant={"ghost"}
+                    type="button"
+                    onClick={() => {
+                      setIsConfirmDialogOpen(false);
+                      openPanel({
+                        title: "Create New CarGate",
+                        content: (
+                          <CarGateForm
+                            initialData={null}
+                            onSubmitComplete={() => refetchCarGates()}
+                          />
+                        ),
+                      });
+                    }}
+                  >
+                    Add car gate
+                  </Button>
                 </SelectContent>
               </Select>
             </div>

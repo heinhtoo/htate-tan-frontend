@@ -9,6 +9,7 @@ export interface PosCartItem extends ProductResponse {
   qty: number;
   selectedUnitName: string;
   convertedQtyMultiplier: number;
+  subQty: number; // new field
 }
 
 // Checkout details structure
@@ -67,6 +68,12 @@ interface PosStoreState {
     isCustomer: boolean,
   ) => void;
   setCartItemQty: (
+    productId: number,
+    qty: number,
+    unitName: string,
+    isCustomer: boolean,
+  ) => void;
+  setCartItemSubQty: (
     productId: number,
     qty: number,
     unitName: string,
@@ -263,6 +270,7 @@ export const usePosStore = create<PosStoreState>()(
                 qty: 1,
                 selectedUnitName: unitName,
                 convertedQtyMultiplier: multiplier,
+                subQty: 1, // <-- default value here
               },
             ],
           };
@@ -329,6 +337,35 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
+      setCartItemSubQty: (
+        productId: number,
+        subQty: number,
+        unitName: string,
+        isCustomer: boolean,
+      ) => {
+        const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
+        const activeOrderId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
+
+        const updatedOrders = orders.map((order) => {
+          if (order.id !== activeOrderId) return order;
+
+          return {
+            ...order,
+            cart: order.cart
+              .map((i) =>
+                i.id === productId && i.selectedUnitName === unitName
+                  ? { ...i, subQty: Math.max(1, subQty) }
+                  : i,
+              )
+              .filter((i) => i.subQty > 0),
+          };
+        });
+
+        set({ orders: updatedOrders });
+      },
+
       updateCartItemPrice: (
         productId: number,
         price: number,
@@ -380,10 +417,7 @@ export const usePosStore = create<PosStoreState>()(
         set({ orders: updatedOrders });
       },
 
-      setCustomer: (
-        customer: CustomerResponse | null,
-        isCustomer: boolean,
-      ) => {
+      setCustomer: (customer: CustomerResponse | null, isCustomer: boolean) => {
         const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
         const activeOrderId = isCustomer
           ? activeSalesOrderId
@@ -635,7 +669,9 @@ export const usePosStore = create<PosStoreState>()(
 
       getActiveOrder: (isCustomer) => {
         const { orders, activeSalesOrderId, activePurchaseOrderId } = get();
-        const activeId = isCustomer ? activeSalesOrderId : activePurchaseOrderId;
+        const activeId = isCustomer
+          ? activeSalesOrderId
+          : activePurchaseOrderId;
         return (
           orders.find(
             (order) => order.id === activeId && order.isCustomer === isCustomer,

@@ -11,6 +11,7 @@ import {
   CreditCard,
   Edit,
   FileText,
+  Monitor,
   Package,
   Plus,
   Printer,
@@ -45,7 +46,9 @@ import { getCarGates } from "../car-gate/car-gate.action";
 import { getOrderDetails, updateOrder } from "./orders.action";
 import { getStatusConfig } from "./orders.page";
 
+import CustomerDropdown from "@/components/dropdown/customer.dropdown";
 import OtherChargeDropdown from "@/components/dropdown/other-charge.dropdown";
+import DatePicker from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -72,15 +75,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/authStore";
 import { useErrorStore } from "@/store/error.store";
+import { usePanelStore } from "@/store/panelStore";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
+import CarGateForm from "../car-gate/car-gate.from";
 import POSProductSection from "../pos/pos-product-section";
 import { cancelPOSOrder } from "../pos/pos.action";
 import { InvoicePrint } from "./order-print";
 import { InvoicePrintV2 } from "./order-print-v2";
 import { OrderStatus } from "./order.response";
 
-export default function OrderDetailsPage() {
+export default function OrderDetailsPage({
+  isCustomer,
+}: {
+  isCustomer: boolean;
+}) {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -127,13 +136,14 @@ export default function OrderDetailsPage() {
     remove: removePayment,
   } = useFieldArray({ control: form.control, name: "payments" });
 
-  const { data: CAR_GATES } = useQuery({
+  const { data: CAR_GATES, refetch: refetchCarGates } = useQuery({
     queryKey: ["car-gate-all"],
     queryFn: () =>
       getCarGates({ page: "0", size: "0", s: "", q: "" }).then(
         (r) => r.response,
       ),
   });
+  const { openPanel } = usePanelStore();
 
   const {
     fields: otherChargesField,
@@ -167,7 +177,7 @@ export default function OrderDetailsPage() {
 
   const calculatedPayable = useMemo(() => {
     const subtotal = watchedItems.reduce(
-      (acc, curr) => acc + curr.quantity * curr.unitPrice,
+      (acc, curr) => acc + curr.quantity * curr.unitPrice * curr.subQuantity,
       0,
     );
 
@@ -184,11 +194,23 @@ export default function OrderDetailsPage() {
 
   const { setError } = useErrorStore();
   const [isProductDrawerOpen, setIsProductDrawerOpen] = useState(false);
+  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
+  const [createdAt, setCreatedAt] = useState<Date | undefined>(undefined);
 
   const paymentsRef = useRef(watchedPayments);
   useEffect(() => {
     paymentsRef.current = watchedPayments;
   }, [watchedPayments]);
+
+  useEffect(() => {
+    if (orderData) {
+      setCustomerId(orderData.customer?.id ?? undefined);
+      setCreatedAt(new Date(orderData.createdAt));
+    } else {
+      setCustomerId(undefined);
+      setCreatedAt(undefined);
+    }
+  }, [orderData]);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -274,6 +296,8 @@ export default function OrderDetailsPage() {
         carGateId: values.carGateId,
         remark: values.remark,
         totalAdditionalDiscountAmount: values.totalAdditionalDiscountAmount,
+        customerId: customerId,
+        createdAt: createdAt?.toLocaleDateString("en-ca"),
 
         // Items that exist in original but not in current fields
         removedItems: originalItems
@@ -289,6 +313,7 @@ export default function OrderDetailsPage() {
             productId: curr.productId,
             orderItemId: curr.id,
             quantity: Number(curr.quantity),
+            subQuantity: Number(curr.subQuantity),
             unitPrice: Number(curr.unitPrice),
             discountAmount: Number(curr.discountAmount),
           })),
@@ -299,6 +324,7 @@ export default function OrderDetailsPage() {
           .map((curr: any) => ({
             productId: curr.productId,
             quantity: Number(curr.quantity),
+            subQuantity: Number(curr.subQuantity),
             unitPrice: Number(curr.unitPrice),
           })),
 
@@ -393,6 +419,7 @@ export default function OrderDetailsPage() {
   };
 
   const itemCount = watchedItems.length;
+  const orderPrefix = isCustomer ? "/orders" : "/purchase-orders";
 
   return (
     <>
@@ -402,7 +429,7 @@ export default function OrderDetailsPage() {
           <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link
-                to="/orders"
+                to={orderPrefix}
                 className="group p-2 -ml-2 hover:bg-slate-100 rounded-full transition-all text-slate-500 hover:text-slate-900"
               >
                 <ArrowLeft
@@ -477,7 +504,7 @@ export default function OrderDetailsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
-                            navigate(`/orders/${slug}/print`);
+                            navigate(`${orderPrefix}/${slug}/print`);
                           }}
                         >
                           <TrendingUp className="mr-2 h-4 w-4" />
@@ -504,7 +531,7 @@ export default function OrderDetailsPage() {
                     variant={"ghost"}
                     className="flex sm:hidden"
                     onClick={() => {
-                      navigate(`/orders/${slug}/print`);
+                      navigate(`${orderPrefix}/${slug}/print`);
                     }}
                   >
                     <Printer />
@@ -648,6 +675,7 @@ export default function OrderDetailsPage() {
                       </DrawerHeader>
                       <div className="flex-1 min-h-0 w-full overflow-hidden">
                         <POSProductSection
+                          isCustomer={isCustomer}
                           addToCart={(product, multiplier) => {
                             const existingIndex = watchedItems.findIndex(
                               (item) => item.productId === product.id,
@@ -661,6 +689,10 @@ export default function OrderDetailsPage() {
                               form.setValue(
                                 `items.${existingIndex}.quantity`,
                                 currentQty + 1 * multiplier,
+                              );
+                              form.setValue(
+                                `items.${existingIndex}.subQuantity`,
+                                1,
                               );
                               toast.success(
                                 `Updated ${product.name} quantity ${currentQty + 1 * multiplier}`,
@@ -676,6 +708,7 @@ export default function OrderDetailsPage() {
                                 productSKU: product.sku,
                                 productImage: product.imagePath,
                                 quantity: 1 * multiplier,
+                                subQuantity: 1,
                                 unitPrice: product.price,
                                 discountAmount: 0,
                               } as any);
@@ -697,6 +730,7 @@ export default function OrderDetailsPage() {
                   <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100">
                     <tr>
                       <th className="px-5 py-3 text-left w-[40%]">Product</th>
+                      <th className="px-2 py-3 text-center w-[12%]">Bag</th>
                       <th className="px-2 py-3 text-center w-[12%]">Qty</th>
                       <th className="px-2 py-3 text-right w-[15%]">Price</th>
                       {/* <th className="px-2 py-3 text-right w-[15%]">Disc.</th> */}
@@ -746,6 +780,20 @@ export default function OrderDetailsPage() {
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
+                            value={watchedItems[index]?.subQuantity || 0}
+                            onChange={(e) => {
+                              form.setValue(
+                                `items.${index}.subQuantity`,
+                                e.currentTarget.valueAsNumber,
+                              );
+                            }}
+                          />
+                        </td>
+                        <td className="px-2 py-3">
+                          <Input
+                            type="number"
+                            disabled={!isEditMode}
+                            className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                             value={watchedItems[index]?.quantity || 0}
                             onChange={(e) => {
                               form.setValue(
@@ -759,7 +807,7 @@ export default function OrderDetailsPage() {
                           <Input
                             type="number"
                             disabled={!isEditMode}
-                            defaultValue={field.unitPrice}
+                            defaultValue={Math.round(field.unitPrice)}
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.unitPrice`,
@@ -786,6 +834,7 @@ export default function OrderDetailsPage() {
                         <td className="px-5 py-3 text-right font-bold text-slate-900 text-sm">
                           {(
                             form.watch(`items.${index}.quantity`) *
+                              form.watch(`items.${index}.subQuantity`) *
                               form.watch(`items.${index}.unitPrice`) -
                             form.watch(`items.${index}.discountAmount`)
                           ).toLocaleString()}
@@ -1135,12 +1184,22 @@ export default function OrderDetailsPage() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                       Customer
                     </p>
-                    <p className="text-sm font-bold text-slate-800">
-                      {orderData?.customer?.name || "Walk-in Customer"}{" "}
-                      {orderData?.customer?.city
-                        ? `(${orderData.customer.city})`
-                        : ""}
-                    </p>
+                    {isEditMode ? (
+                      <CustomerDropdown
+                        isCustomer={isCustomer}
+                        setValue={(value) => {
+                          setCustomerId(value);
+                        }}
+                        value={customerId}
+                      />
+                    ) : (
+                      <p className="text-sm font-bold text-slate-800">
+                        {orderData?.customer?.name || "Walk-in Customer"}{" "}
+                        {orderData?.customer?.city
+                          ? `(${orderData.customer.city})`
+                          : ""}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1175,6 +1234,24 @@ export default function OrderDetailsPage() {
                                 {gate.gateName}
                               </SelectItem>
                             ))}
+                            <Button
+                              className="w-full border-t text-xs "
+                              variant={"ghost"}
+                              type="button"
+                              onClick={() => {
+                                openPanel({
+                                  title: "Create New CarGate",
+                                  content: (
+                                    <CarGateForm
+                                      initialData={null}
+                                      onSubmitComplete={() => refetchCarGates()}
+                                    />
+                                  ),
+                                });
+                              }}
+                            >
+                              Add car gate
+                            </Button>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1229,6 +1306,56 @@ export default function OrderDetailsPage() {
                     )}
                   </div>
                 </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Calendar size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Order Date
+                    </p>
+                    {isEditMode ? (
+                      <div className="h-8">
+                        <DatePicker
+                          value={createdAt}
+                          setValue={(value) => {
+                            setCreatedAt(value);
+                          }}
+                        />
+                      </div>
+                    ) : orderData?.createdAt ? (
+                      <Badge
+                        variant="outline"
+                        className="font-bold text-slate-700 bg-slate-50 border-slate-200"
+                      >
+                        {new Date(orderData?.createdAt).toLocaleDateString(
+                          "en-ca",
+                          { year: "numeric", month: "short", day: "2-digit" },
+                        )}
+                      </Badge>
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Monitor size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Created By
+                    </p>
+                    <Badge
+                      variant="outline"
+                      className="font-bold text-slate-700 bg-slate-50 border-slate-200"
+                    >
+                      {orderData?.createdBy}
+                    </Badge>
+                  </div>
+                </div>
               </div>
             </Card>
 
@@ -1261,7 +1388,9 @@ export default function OrderDetailsPage() {
                     <span className="font-bold text-slate-200">
                       {watchedItems
                         .reduce(
-                          (acc, curr) => acc + curr.quantity * curr.unitPrice,
+                          (acc, curr) =>
+                            acc +
+                            curr.quantity * curr.subQuantity * curr.unitPrice,
                           0,
                         )
                         .toLocaleString()}{" "}

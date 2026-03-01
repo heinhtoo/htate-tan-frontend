@@ -1,6 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/currencyHelper";
+import { useAuthStore } from "@/store/authStore";
+import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore";
+import { useMutation } from "@tanstack/react-query";
+import { Edit, TrashIcon } from "lucide-react";
 import { useNavigate } from "react-router";
+import { removeStock } from "./product.action";
 import type { ProductResponse } from "./product.response";
 import RestockForm from "./restock-form";
 
@@ -19,6 +37,7 @@ const ProductDetails = ({
   const stockLabel = isLowStock ? "Low Stock" : "In Stock";
   const navigate = useNavigate();
   const { openPanel } = usePanelStore();
+  const { user } = useAuthStore();
   const handleRestock = (product: ProductResponse) => {
     openPanel({
       title: `Restock: ${product.name}`,
@@ -31,6 +50,23 @@ const ProductDetails = ({
       ),
     });
   };
+
+  const { setError } = useErrorStore();
+
+  const deleteMutation = useMutation({
+    mutationFn: (stockId: number) =>
+      removeStock({
+        id: product.id,
+        stockId,
+      }),
+    onSuccess: (payload) => {
+      if (payload.error) {
+        setError(payload.error as any);
+      } else {
+        refetch();
+      }
+    },
+  });
 
   return (
     <div className="max-w-6xl w-full mx-auto p-6 bg-gray-50 min-h-screen">
@@ -156,9 +192,80 @@ const ProductDetails = ({
                           {/* Assuming stock entity has created_at or updated_at */}
                           {product.lastRestockedAt
                             ? new Date(
-                                product.lastRestockedAt
+                                product.lastRestockedAt,
                               ).toLocaleDateString()
                             : "-"}
+                        </td>
+                        <td>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-md"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPanel({
+                                title: `Update Restock: ${product.name}`,
+                                content: (
+                                  <RestockForm
+                                    productId={product.id}
+                                    productName={product.name}
+                                    onSubmitComplete={() => refetch()}
+                                    stockData={{
+                                      id: stock.id,
+                                      purchasedPriceInMMK:
+                                        stock.purchasedPriceInMMK,
+                                      purchasedQuantity:
+                                        stock.purchasedQuantity,
+                                      warehouseId: stock.warehouse.id,
+                                    }}
+                                  />
+                                ),
+                              });
+                            }}
+                          >
+                            <Edit />
+                          </Button>
+                          {user?.isAdmin && (
+                            <AlertDialog>
+                              {/* This button triggers the dialog */}
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-md"
+                                  type="button"
+                                  onClick={(e) => e.stopPropagation()} // prevent row click
+                                >
+                                  <TrashIcon />
+                                </Button>
+                              </AlertDialogTrigger>
+
+                              {/* Dialog content */}
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Confirm Delete
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this order?
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteMutation.mutate(stock.id);
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -211,8 +318,8 @@ const ProductDetails = ({
                   product.stocks?.reduce(
                     (acc, stock) =>
                       acc + stock.currentQuantity * stock.purchasedPriceInMMK,
-                    0
-                  ) || 0
+                    0,
+                  ) || 0,
                 )}
               </span>
             </div>

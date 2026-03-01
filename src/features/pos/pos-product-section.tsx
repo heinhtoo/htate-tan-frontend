@@ -19,12 +19,14 @@ import { UnitSelectionSheet } from "./unit-conversion.sheet";
 
 function POSProductSection({
   addToCart,
+  isCustomer,
 }: {
   addToCart: (
     product: ProductResponse,
     multiplier: number,
     unitName: string,
   ) => void;
+  isCustomer: boolean;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<number>(-1);
   const [selectedBrand, setSelectedBrand] = useState<number>(-1);
@@ -57,10 +59,10 @@ function POSProductSection({
   }, 3000);
 
   useEffect(() => {
-    if (PRODUCTS?.data) {
+    if (PRODUCTS?.data && isCustomer) {
       usePosStore.getState().syncProducts(PRODUCTS?.data);
     }
-  }, [PRODUCTS]);
+  }, [PRODUCTS, isCustomer]);
 
   const { data: CATEGORIES } = useQuery({
     queryKey: ["categories-all"],

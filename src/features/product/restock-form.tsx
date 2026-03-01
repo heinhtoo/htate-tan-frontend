@@ -15,15 +15,22 @@ import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { restockProduct } from "./product.action";
+import { restockProduct, updateRestockProduct } from "./product.action";
 import { RestockSchema } from "./product.schema";
 
 interface RestockFormProps {
   productId: number;
   productName: string;
+  stockData?: {
+    id: number;
+    purchasedQuantity: number;
+    purchasedPriceInMMK: number;
+    warehouseId: number;
+  };
   onSubmitComplete: () => void;
 }
 
@@ -31,6 +38,7 @@ export default function RestockForm({
   productId,
   productName,
   onSubmitComplete,
+  stockData,
 }: RestockFormProps) {
   const { setError } = useErrorStore();
   const { closePanel } = usePanelStore(); // Assuming this form closes a panel/modal
@@ -44,6 +52,24 @@ export default function RestockForm({
       warehouseId: undefined,
     },
   });
+
+  useEffect(() => {
+    if (stockData) {
+      form.reset({
+        productId: productId,
+        purchasedQuantity: stockData.purchasedQuantity,
+        purchasedPriceInMMK: stockData.purchasedPriceInMMK,
+        warehouseId: stockData.warehouseId,
+      });
+    } else {
+      form.reset({
+        productId: productId,
+        purchasedQuantity: 0,
+        purchasedPriceInMMK: 0,
+        warehouseId: undefined,
+      });
+    }
+  }, [stockData]);
 
   const { handleSubmit, control, formState, watch } = form;
   const isLoading = formState.isSubmitting;
@@ -62,9 +88,17 @@ export default function RestockForm({
       purchasedQuantity: Number(values.purchasedQuantity),
       purchasedPriceInMMK: Number(values.purchasedPriceInMMK),
     };
-
-    const { error } = await restockProduct({ payload: data }); // Your API call
-
+    let error = undefined;
+    if (stockData) {
+      const { error: errorRes } = await updateRestockProduct({
+        stockId: stockData.id,
+        payload: data,
+      }); // Your API call
+      error = errorRes;
+    } else {
+      const { error: errorRes } = await restockProduct({ payload: data }); // Your API call
+      error = errorRes;
+    }
     if (error) {
       setError(error as ErrorResponse);
       return;
@@ -86,7 +120,6 @@ export default function RestockForm({
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         {/* Hidden Field for Product Context */}
         <input type="hidden" {...form.register("productId")} />
-
 
         {/* Warehouse Selection */}
         <FormField

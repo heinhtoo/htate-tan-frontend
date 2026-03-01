@@ -25,7 +25,7 @@ function CustomerDropdown({
   disabled,
   isCustomer,
 }: {
-  value: string;
+  value: string | undefined;
   setValue: (value: string) => void;
   disabled?: boolean;
   isCustomer: boolean;
@@ -79,7 +79,10 @@ function CustomerDropdown({
           disabled={disabled ? true : false}
         >
           {value
-            ? data.data.find((item) => item.id === value)?.name + (data.data.find((item)=> item.id === value)?.city ? `(${data.data.find((item)=> item.id === value)?.city})`: "")
+            ? data.data.find((item) => item.id === value)?.name +
+              (data.data.find((item) => item.id === value)?.city
+                ? `(${data.data.find((item) => item.id === value)?.city})`
+                : "")
             : "Select customer..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -102,7 +105,7 @@ function CustomerDropdown({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.id ? "opacity-100" : "opacity-0"
+                      value === option.id ? "opacity-100" : "opacity-0",
                     )}
                   />
                   {option.name}

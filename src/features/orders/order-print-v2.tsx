@@ -122,7 +122,10 @@ export const InvoicePrintV2 = forwardRef<
                   </span>
                   <span className="mx-1">:</span>
                   <span className="leading-tight">
-                    {orderData?.customer?.name || "Walk-in Customer"} {orderData?.customer?.city ? `(${orderData.customer.city})`: ""}
+                    {orderData?.customer?.name || "Walk-in Customer"}{" "}
+                    {orderData?.customer?.city
+                      ? `(${orderData.customer.city})`
+                      : ""}
                   </span>
                 </div>
                 <div className="flex flex-row items-start">
@@ -171,6 +174,9 @@ export const InvoicePrintV2 = forwardRef<
                       Description
                     </th>
                     <th className="border border-[#0f172a] py-0.5 w-12 text-center font-bold">
+                      Bag
+                    </th>
+                    <th className="border border-[#0f172a] py-0.5 w-12 text-center font-bold">
                       Qty
                     </th>
                     <th className="border border-[#0f172a] py-0.5 w-16 text-right pr-1 font-bold">
@@ -192,13 +198,20 @@ export const InvoicePrintV2 = forwardRef<
                         {item.productName}
                       </td>
                       <td className="border-r border-[#0f172a] text-center font-bold">
+                        {item.subQuantity}
+                      </td>
+                      <td className="border-r border-[#0f172a] text-center font-bold">
                         {item.quantity}
                       </td>
                       <td className="border-r border-[#0f172a] text-right pr-1 font-mono">
                         {parseFloat(item.unitPrice + "").toLocaleString()}
                       </td>
                       <td className="border-r border-[#0f172a] text-right pr-1 font-bold font-mono">
-                        {(item.quantity * item.unitPrice).toLocaleString()}
+                        {(
+                          item.quantity *
+                          item.subQuantity *
+                          item.unitPrice
+                        ).toLocaleString()}
                       </td>
                     </tr>
                   ))}

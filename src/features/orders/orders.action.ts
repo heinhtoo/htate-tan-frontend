@@ -81,7 +81,7 @@ async function getOrdersFn({
       (after ? "&after=" + after : "") +
       (q ? "&q=" + q : "") +
       "&" +
-      urlSearchParams.toString()
+      urlSearchParams.toString(),
   );
 
   const data = response.data;
@@ -90,7 +90,7 @@ async function getOrdersFn({
 
 async function getOrderDetailsFn({ slug }: { slug: string }) {
   const response = await axiosClientInstance.get<APIResponse<OrderResponse>>(
-    "/common/pos/" + slug
+    "/common/pos/" + slug,
   );
 
   const data = response.data;
@@ -148,7 +148,21 @@ async function updateOrderFn({
           status: item.status,
         };
       }),
-    })
+    }),
+  );
+
+  let isSuccess = false;
+  if (response.status >= 200 && response.status < 300) {
+    isSuccess = true;
+  }
+
+  const result = response.data;
+  return { isSuccess, result };
+}
+
+async function deleteOrderFn({ id }: { id: number }) {
+  const response = await axiosClientInstance.delete<APIResponse<OrderResponse>>(
+    "/common/pos/" + id,
   );
 
   let isSuccess = false;
@@ -164,3 +178,4 @@ export const getOrders = withHandler(getOrdersFn);
 export const updateOrder = withHandler(updateOrderFn);
 export const getOrderStats = withHandler(getOrderStatsFn);
 export const getOrderDetails = withHandler(getOrderDetailsFn);
+export const deleteOrder = withHandler(deleteOrderFn);

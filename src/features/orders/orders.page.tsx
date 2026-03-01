@@ -1,4 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,7 +23,9 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/authStore";
+import { useErrorStore } from "@/store/error.store";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { addDays, format } from "date-fns";
 import {
   CheckCircle2,
@@ -20,13 +34,14 @@ import {
   Package,
   Search,
   ShoppingBag,
+  TrashIcon,
   XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Link, useNavigate } from "react-router";
 import { OrderStatus } from "./order.response";
-import { getOrders, getOrderStats } from "./orders.action";
+import { deleteOrder, getOrders, getOrderStats } from "./orders.action";
 
 export const getStatusConfig = (status: string) => {
   switch (status) {
@@ -63,7 +78,7 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
     to: addDays(new Date(), 7),
   });
 
-  const { data: statsResponse } = useQuery({
+  const { data: statsResponse, refetch: refetchStats } = useQuery({
     queryKey: ["orders-stats", dateFilter, dateRange, isCustomer],
     queryFn: () =>
       getOrderStats({
@@ -76,7 +91,7 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
   });
   const stats = statsResponse?.response?.data;
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useInfiniteQuery({
       queryKey: [
         "orders",
@@ -108,6 +123,23 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
           : undefined,
     });
 
+  const { setError } = useErrorStore();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) =>
+      deleteOrder({
+        id,
+      }),
+    onSuccess: (payload) => {
+      if (payload.error) {
+        setError(payload.error as any);
+      } else {
+        refetch();
+        refetchStats();
+      }
+    },
+  });
+
   const orders =
     data?.pages
       .filter((item) => item.response?.data)
@@ -125,6 +157,7 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   return (
     <div className="h-screen flex flex-col bg-slate-50/50 overflow-hidden px-6">
@@ -418,6 +451,46 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                               <ChevronRight className="w-4 h-4" />
                             </Link>
                           </Button>
+                          {user?.isAdmin && (
+                            <AlertDialog>
+                              {/* This button triggers the dialog */}
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-md"
+                                  type="button"
+                                  onClick={(e) => e.stopPropagation()} // prevent row click
+                                >
+                                  <TrashIcon />
+                                </Button>
+                              </AlertDialogTrigger>
+
+                              {/* Dialog content */}
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Confirm Delete
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this order?
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteMutation.mutate(order.id);
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -124,7 +124,10 @@ function RouteList() {
             <Route index element={<DashboardPage />} />
             <Route path="pos" element={<POSPage isCustomer={true} />} />
             <Route path="orders" element={<OrdersPage isCustomer={true} />} />
-            <Route path="orders/:slug" element={<OrderDetailsPage />} />
+            <Route
+              path="orders/:slug"
+              element={<OrderDetailsPage isCustomer={true} />}
+            />
             <Route path="orders/:slug/print" element={<OrderPrintPage />} />
 
             {/* Inventory & Products Routes */}
@@ -147,7 +150,7 @@ function RouteList() {
               />
               <Route
                 path="purchase-orders/:slug"
-                element={<OrderDetailsPage />}
+                element={<OrderDetailsPage isCustomer={false} />}
               />
               <Route
                 path="purchase-orders/:slug/print"
