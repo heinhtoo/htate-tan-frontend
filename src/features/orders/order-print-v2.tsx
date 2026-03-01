@@ -47,10 +47,14 @@ export const InvoicePrintV2 = forwardRef<
       return <></>;
     }
 
-    const paidAmount = orderData.payments
-      .filter((item: any) => item.status === "completed")
-      .map((item: any) => item.amount)
-      .reduce((acc: any, item: any) => acc + item);
+    const paidAmount =
+      orderData.payments.filter((item: any) => item.status === "completed")
+        .length > 0
+        ? orderData.payments
+            .filter((item: any) => item.status === "completed")
+            .map((item: any) => item.amount)
+            .reduce((acc: any, item: any) => acc + item)
+        : 0;
     return (
       <div
         ref={ref}
