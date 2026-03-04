@@ -1,10 +1,8 @@
 /* eslint-disable no-irregular-whitespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 import headline from "./headline.png";
 import type { PaymentResponse } from "./order.response";
-import { pyidaungsuBase64 } from "./pdf-assets";
-import "./pdf.css";
 
 export const InvoicePrintV2 = forwardRef<
   HTMLDivElement,
@@ -51,38 +49,22 @@ export const InvoicePrintV2 = forwardRef<
       orderData.payments.filter((item: any) => item.status === "completed")
         .length > 0
         ? orderData.payments
-            .filter((item: any) => item.status === "completed")
-            .map((item: any) => item.amount)
-            .reduce((acc: any, item: any) => acc + item)
+          .filter((item: any) => item.status === "completed")
+          .map((item: any) => item.amount)
+          .reduce((acc: any, item: any) => acc + item)
         : 0;
+
+
+
     return (
       <div
         ref={ref}
-        className="flex flex-col items-center justify-center invoice-print-v2"
+        className="flex flex-col items-center justify-center"
       >
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-            @font-face {
-              font-family: 'Pyidaungsu';
-              src: url(data:font/truetype;base64,${pyidaungsuBase64}) format('truetype');
-              font-weight: normal;
-              font-style: normal;
-            }
-            @media print {
-              @page { size: A5 portrait; margin: 0; }
-              .print-page { page-break-after: always; position: relative; overflow: hidden; }
-              .print-page:last-child { page-break-after: auto; }
-              body { -webkit-print-color-adjust: exact; }
-            }
-          `,
-          }}
-        />
-
         {pages.map((pageItems, pageIndex) => (
           <div
             key={pageIndex}
-            className="print-page w-[140mm] h-[200mm] bg-white text-[#0f172a] flex flex-col font-sans antialiased shrink-0 relative"
+            className="print-page w-[140mm] h-[200mm] bg-white text-[#0f172a] flex flex-col antialiased shrink-0 relative"
             style={{ boxSizing: "border-box" }}
           >
             {/* --- WATERMARK --- */}
@@ -198,7 +180,7 @@ export const InvoicePrintV2 = forwardRef<
                 <tbody>
                   {pageItems.map((item, i) => (
                     <tr key={i} className="h-7 border-b border-[#94a3b8]">
-                      <td className="border-x border-[#0f172a] text-center font-mono text-[9px]">
+                      <td className="border-x border-[#0f172a] text-center  text-[9px]">
                         {pageIndex * ITEMS_PER_PAGE + i + 1}
                       </td>
                       <td className="border-r border-[#0f172a] px-2 font-medium  max-w-[220px]">
@@ -211,10 +193,10 @@ export const InvoicePrintV2 = forwardRef<
                       <td className="border-r border-[#0f172a] text-center font-bold">
                         {item.quantity}
                       </td>
-                      <td className="border-r border-[#0f172a] text-right pr-1 font-mono">
+                      <td className="border-r border-[#0f172a] text-right pr-1">
                         {parseFloat(item.unitPrice + "").toLocaleString()}
                       </td>
-                      <td className="border-r border-[#0f172a] text-right pr-1 font-bold font-mono">
+                      <td className="border-r border-[#0f172a] text-right pr-1 font-bold">
                         {(
                           item.quantity *
                           item.subQuantity *
@@ -260,7 +242,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[8px] self-end uppercase">
                           ပို့ဆောင်ခ:
                         </span>
-                        <span className="font-mono">
+                        <span>
                           {orderData?.totals?.otherCharges.toLocaleString()} Ks
                         </span>
                       </div>
@@ -268,7 +250,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[8px] self-end uppercase">
                           Discount:
                         </span>
-                        <span className="font-mono">
+                        <span>
                           {(
                             orderData?.totals?.additionalDiscount +
                             orderData?.totals?.orderDiscount
@@ -282,7 +264,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[9px] self-end mb-0.5 uppercase">
                           Total:
                         </span>
-                        <span className="font-mono">
+                        <span >
                           {calculatedPayable.toLocaleString()} Ks
                         </span>
                       </div>
@@ -290,7 +272,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[9px] self-end mb-0.5 uppercase whitespace-nowrap">
                           Cash Received:
                         </span>
-                        <span className="font-mono">
+                        <span >
                           {paidAmount.toLocaleString()} Ks
                         </span>
                       </div>
@@ -298,7 +280,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[9px] self-end mb-0.5 uppercase">
                           Balance:
                         </span>
-                        <span className="font-mono">
+                        <span >
                           {(calculatedPayable - paidAmount).toLocaleString()} Ks
                         </span>
                       </div>

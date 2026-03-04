@@ -311,6 +311,12 @@ export default function OrderPrintPage() {
         logging: false,
         backgroundColor: "#ffffff",
         scrollY: 0, // Ensure no scroll offset
+        onclone: (clonedDoc) => {
+          const container = clonedDoc.getElementById("print-container");
+          if (container) {
+            container.style.transform = "none";
+          }
+        },
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
@@ -451,7 +457,7 @@ export default function OrderPrintPage() {
         <div className="flex justify-center bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-4 md:p-8 min-h-[600px] ring-1 ring-slate-100">
           <div
             ref={printRef}
-            className="transform scale-[0.6] sm:scale-[0.8] md:scale-100 origin-top"
+            className="transform scale-100 origin-top"
           >
             <InvoicePrintV2
               orderData={orderData}
