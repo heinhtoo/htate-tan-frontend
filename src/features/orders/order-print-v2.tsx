@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { forwardRef, useEffect } from "react";
+import { forwardRef } from "react";
 import headline from "./headline.png";
 import type { PaymentResponse } from "./order.response";
 
@@ -34,7 +34,7 @@ export const InvoicePrintV2 = forwardRef<
         : completedPayments[0]?.type || "Credit";
 
     // Reduced items per page slightly to accommodate increased row height
-    const ITEMS_PER_PAGE = 15;
+    const ITEMS_PER_PAGE = 10;
     const pages = [];
     for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
@@ -49,18 +49,13 @@ export const InvoicePrintV2 = forwardRef<
       orderData.payments.filter((item: any) => item.status === "completed")
         .length > 0
         ? orderData.payments
-          .filter((item: any) => item.status === "completed")
-          .map((item: any) => item.amount)
-          .reduce((acc: any, item: any) => acc + item)
+            .filter((item: any) => item.status === "completed")
+            .map((item: any) => item.amount)
+            .reduce((acc: any, item: any) => acc + item)
         : 0;
 
-
-
     return (
-      <div
-        ref={ref}
-        className="flex flex-col items-center justify-center"
-      >
+      <div ref={ref} className="flex flex-col items-center justify-center">
         {pages.map((pageItems, pageIndex) => (
           <div
             key={pageIndex}
@@ -163,7 +158,7 @@ export const InvoicePrintV2 = forwardRef<
                     <th className="border border-[#0f172a] py-0.5 px-2 text-left font-bold">
                       Description
                     </th>
-                    <th className="border border-[#0f172a] py-0.5 w-12 text-center font-bold">
+                    <th className="border border-[#0f172a] py-0.5 w-10 text-center font-bold">
                       Bag
                     </th>
                     <th className="border border-[#0f172a] py-0.5 w-12 text-center font-bold">
@@ -179,13 +174,20 @@ export const InvoicePrintV2 = forwardRef<
                 </thead>
                 <tbody>
                   {pageItems.map((item, i) => (
-                    <tr key={i} className="h-7 border-b border-[#94a3b8]">
-                      <td className="border-x border-[#0f172a] text-center  text-[9px]">
+                    <tr
+                      key={i}
+                      className="h-7 border-b border-[#94a3b8] text-sm"
+                    >
+                      <td className="border-x border-[#0f172a] text-center">
                         {pageIndex * ITEMS_PER_PAGE + i + 1}
                       </td>
                       <td className="border-r border-[#0f172a] px-2 font-medium  max-w-[220px]">
-                        {item.productSKU && `[${item.productSKU}] `}
-                        {item.productName}
+                        <div>
+                          <p>{item.productName}</p>
+                          <p className="text-[10px] text-gray-600">
+                            {item.productSKU && `[${item.productSKU}] `}
+                          </p>
+                        </div>
                       </td>
                       <td className="border-r border-[#0f172a] text-center font-bold">
                         {item.subQuantity}
@@ -264,23 +266,19 @@ export const InvoicePrintV2 = forwardRef<
                         <span className="text-[9px] self-end mb-0.5 uppercase">
                           Total:
                         </span>
-                        <span >
-                          {calculatedPayable.toLocaleString()} Ks
-                        </span>
+                        <span>{calculatedPayable.toLocaleString()} Ks</span>
                       </div>
                       <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
                         <span className="text-[9px] self-end mb-0.5 uppercase whitespace-nowrap">
                           Cash Received:
                         </span>
-                        <span >
-                          {paidAmount.toLocaleString()} Ks
-                        </span>
+                        <span>{paidAmount.toLocaleString()} Ks</span>
                       </div>
                       <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
                         <span className="text-[9px] self-end mb-0.5 uppercase">
                           Balance:
                         </span>
-                        <span >
+                        <span>
                           {(calculatedPayable - paidAmount).toLocaleString()} Ks
                         </span>
                       </div>
