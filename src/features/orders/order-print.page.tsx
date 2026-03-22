@@ -49,6 +49,9 @@ export default function OrderPrintPage() {
     enabled: !!customerId,
   });
 
+  const isA4 =
+    order?.response?.data?.items && order?.response?.data?.items.length > 10;
+
   const ordersList =
     customerData?.orders.map((o: any) => {
       const payable =
@@ -402,6 +405,7 @@ export default function OrderPrintPage() {
       const result = await printPdf({
         file: pdfBlob,
         printerName: selectedPrinter,
+        isA4,
       });
 
       if (result.response) {

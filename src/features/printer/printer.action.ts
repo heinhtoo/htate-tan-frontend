@@ -13,9 +13,11 @@ async function getPrintersFn() {
 async function printPdfFn({
   file,
   printerName,
+  isA4,
 }: {
   file: Blob;
   printerName?: string;
+  isA4?: boolean;
 }) {
   const formData = new FormData();
   formData.append("file", file, "order.pdf");
@@ -24,7 +26,7 @@ async function printPdfFn({
   }
 
   const response = await axiosClientInstance.post<APIResponse<any>>(
-    "/internal/printer/print",
+    "/internal/printer/print?isA4=" + (isA4 ? "1" : "0"),
     formData,
     {
       headers: {
