@@ -76,34 +76,57 @@ const CustomerManagementSystem = () => {
         const payment = o.payments
           .filter(
             (item: any) =>
-              item.status === "completed" || item.status === "unconfirmed"
+              item.status === "completed" || item.status === "unconfirmed",
           )
           .reduce(
             (acc: number, item: any) => Number(acc) + Number(item.amount),
-            0
+            0,
           );
         return {
           ...o,
-          remaining: o.orderStatus === "Success" ? 0 : payable - payment,
+          remaining: payable - payment,
         };
       });
       setOrders(mappedOrders);
-      setPayments(data.payments || []);
+      const completedPayments = (data.payments || []).filter(
+        (p: any) => p.status === "completed",
+      );
+
+      setPayments(completedPayments);
     }
   }, [data]);
+
+  const groupedPayments = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+
+    payments.forEach((p) => {
+      const date = new Date(p.createdAt).toLocaleDateString("en-CA"); // YYYY-MM-DD
+
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+
+      groups[date].push(p);
+    });
+
+    // Optional: sort by latest date first
+    return Object.entries(groups).sort(
+      (a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime(),
+    );
+  }, [payments]);
 
   // 4. COMPUTED VALUES
   const totalDebt = useMemo(
     () => orders.reduce((acc, curr) => acc + (curr.remaining || 0), 0),
-    [orders]
+    [orders],
   );
   const totalSpent = useMemo(
     () => orders.reduce((acc, curr) => acc + curr.totalOrderAmount, 0),
-    [orders]
+    [orders],
   );
   const totalAllocated = useMemo(
     () => Object.values(allocations).reduce((a, b) => a + b, 0),
-    [allocations]
+    [allocations],
   );
   const remainingDebtAfterPayment = Math.max(0, totalDebt - totalInput);
   const { setError } = useErrorStore();
@@ -116,7 +139,7 @@ const CustomerManagementSystem = () => {
       .filter((o) => o.remaining > 0)
       .sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
     sortedOrders.forEach((order) => {
@@ -383,36 +406,72 @@ const CustomerManagementSystem = () => {
 
           <TabsContent
             value="payments"
-            className="overflow-y-auto max-h-[50vh]"
+            className="space-y-6 max-h-[50vh] overflow-y-auto"
           >
-            <DataTable
-              headers={["Receipt", "Order Link", "Status", "Amount Paid"]}
-              data={payments}
-              renderRow={(p: any) => (
-                <TableRow
-                  key={p.id}
-                  className="border-slate-50 hover:bg-slate-50/50"
-                >
-                  <TableCell className="py-5 pl-8 font-bold text-indigo-600 flex items-center gap-2 text-sm uppercase">
-                    <ReceiptText size={16} /> PAY-{p.id.toString().slice(-4)}
-                  </TableCell>
-                  <TableCell className="font-medium text-slate-500">
-                    Order #{p.orderId}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`capitalize ${p.status === "completed" ? "border-emerald-200 text-emerald-600 bg-emerald-50" : ""}`}
-                    >
-                      {p.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right pr-8 font-black text-slate-900">
-                    {Number(p.amount).toLocaleString()} MMK
-                  </TableCell>
-                </TableRow>
-              )}
-            />
+            {groupedPayments.length > 0 ? (
+              groupedPayments.map(([date, group]) => {
+                const total = group.reduce(
+                  (acc: number, p: any) => acc + Number(p.amount),
+                  0,
+                );
+
+                return (
+                  <Card
+                    key={date}
+                    className="border-none shadow-xl shadow-slate-200/40 rounded-3xl overflow-hidden"
+                  >
+                    {/* DATE HEADER */}
+                    <div className="flex justify-between items-center px-6 py-4 bg-slate-50 border-b">
+                      <p className="font-bold text-slate-700">
+                        {new Date(date).toLocaleDateString("en-CA", {
+                          year: "numeric",
+                          month: "short",
+                          day: "2-digit",
+                        })}
+                      </p>
+                      <p className="text-sm font-bold text-indigo-600">
+                        Total: {total.toLocaleString()} MMK
+                      </p>
+                    </div>
+
+                    {/* TABLE */}
+                    <Table>
+                      <TableBody>
+                        {group.map((p: any) => (
+                          <TableRow
+                            key={p.id}
+                            className="border-slate-50 hover:bg-slate-50/50"
+                          >
+                            <TableCell className="py-5 pl-6 font-bold text-indigo-600 flex items-center gap-2 text-sm uppercase">
+                              <ReceiptText size={16} />
+                              PAY-{p.id.toString().slice(-4)}
+                            </TableCell>
+
+                            <TableCell className="font-medium text-slate-500">
+                              Order #{p.orderId}
+                            </TableCell>
+
+                            <TableCell>
+                              <Badge className="border-emerald-200 text-emerald-600 bg-emerald-50 capitalize">
+                                {p.status}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell className="text-right pr-6 font-black text-slate-900">
+                              {Number(p.amount).toLocaleString()} MMK
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 text-slate-400">
+                No payments found
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

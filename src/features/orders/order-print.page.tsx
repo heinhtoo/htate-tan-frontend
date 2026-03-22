@@ -13,10 +13,11 @@ import { useQuery } from "@tanstack/react-query";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { ArrowLeft, Clock, Printer } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import LoadingPage from "../common/loading.page";
+import { getCustomerDetails } from "../customer/customer.action";
 import { getPrinters, printPdf } from "../printer/printer.action";
 import { InvoicePrintV2 } from "./order-print-v2";
 import { getOrderDetails } from "./orders.action";
@@ -32,6 +33,52 @@ export default function OrderPrintPage() {
     queryKey: ["order-details", slug],
     queryFn: () => getOrderDetails({ slug: slug ?? "" }),
   });
+
+  const customerId = order?.response?.data?.customer?.id ?? "";
+
+  const { data: customerData } = useQuery({
+    queryKey: ["customer-details", customerId],
+    queryFn: async () => {
+      const res = await getCustomerDetails({
+        id: customerId!,
+        isCustomer: true,
+      });
+      if (res.response) return res.response;
+      throw new Error(res.error || ("Failed to fetch" as any));
+    },
+    enabled: !!customerId,
+  });
+
+  const ordersList =
+    customerData?.orders.map((o: any) => {
+      const payable =
+        o.totalOrderAmount +
+        o.totalOtherCharges -
+        o.totalOrderDiscountAmount -
+        o.totalAdditionalDiscountAmount;
+      const payment = o.payments
+        .filter(
+          (item: any) =>
+            item.status === "completed" || item.status === "unconfirmed",
+        )
+        .reduce(
+          (acc: number, item: any) => Number(acc) + Number(item.amount),
+          0,
+        );
+      return {
+        ...o,
+        remaining: payable - payment,
+      };
+    }) ?? [];
+
+  const totalDebt = useMemo(
+    () =>
+      ordersList.reduce(
+        (acc: any, curr: any) => acc + (curr.remaining || 0),
+        0,
+      ),
+    [ordersList],
+  );
 
   const orderData = order?.response?.data;
 
@@ -444,7 +491,11 @@ export default function OrderPrintPage() {
               </SelectTrigger>
               <SelectContent className="bg-white text-black">
                 {printers.map((name) => (
-                  <SelectItem key={name} value={name} className="bg-white text-black">
+                  <SelectItem
+                    key={name}
+                    value={name}
+                    className="bg-white text-black"
+                  >
                     {name}
                   </SelectItem>
                 ))}
@@ -455,10 +506,7 @@ export default function OrderPrintPage() {
 
         {/* The Actual Preview Component */}
         <div className="flex justify-center bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-4 md:p-8 min-h-[600px] ring-1 ring-slate-100">
-          <div
-            ref={printRef}
-            className="transform scale-100 origin-top"
-          >
+          <div ref={printRef} className="transform scale-100 origin-top">
             <InvoicePrintV2
               orderData={orderData}
               watchedItems={orderData.items}
@@ -466,6 +514,7 @@ export default function OrderPrintPage() {
               paymentData={orderData.payments}
               warehouseAddress={orderData.warehouse}
               carGate={orderData.carGate?.name}
+              totalDebt={totalDebt}
             />
           </div>
         </div>

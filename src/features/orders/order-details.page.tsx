@@ -79,6 +79,7 @@ import { usePanelStore } from "@/store/panelStore";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import CarGateForm from "../car-gate/car-gate.from";
+import { getCustomerDetails } from "../customer/customer.action";
 import POSProductSection from "../pos/pos-product-section";
 import { cancelPOSOrder } from "../pos/pos.action";
 import { InvoicePrint } from "./order-print";
@@ -197,6 +198,19 @@ export default function OrderDetailsPage({
   const [customerId, setCustomerId] = useState<string | undefined>(undefined);
   const [createdAt, setCreatedAt] = useState<Date | undefined>(undefined);
 
+  const { data: customerData } = useQuery({
+    queryKey: ["customer-details", customerId],
+    queryFn: async () => {
+      const res = await getCustomerDetails({
+        id: customerId!,
+        isCustomer,
+      });
+      if (res.response) return res.response;
+      throw new Error(res.error || ("Failed to fetch" as any));
+    },
+    enabled: !!customerId,
+  });
+
   const paymentsRef = useRef(watchedPayments);
   useEffect(() => {
     paymentsRef.current = watchedPayments;
@@ -310,6 +324,7 @@ export default function OrderDetailsPage({
         updatedItems: values.items
           .filter((curr: any) => curr.id)
           .map((curr: any) => ({
+            orderIndex: curr.orderIndex,
             productId: curr.productId,
             orderItemId: curr.id,
             quantity: Number(curr.quantity),
@@ -322,6 +337,7 @@ export default function OrderDetailsPage({
         createdItems: values.items
           .filter((curr: any) => !curr.id)
           .map((curr: any) => ({
+            orderIndex: curr.orderIndex,
             productId: curr.productId,
             quantity: Number(curr.quantity),
             subQuantity: Number(curr.subQuantity),
@@ -420,6 +436,37 @@ export default function OrderDetailsPage({
 
   const itemCount = watchedItems.length;
   const orderPrefix = isCustomer ? "/orders" : "/purchase-orders";
+
+  const ordersList =
+    customerData?.orders.map((o: any) => {
+      const payable =
+        o.totalOrderAmount +
+        o.totalOtherCharges -
+        o.totalOrderDiscountAmount -
+        o.totalAdditionalDiscountAmount;
+      const payment = o.payments
+        .filter(
+          (item: any) =>
+            item.status === "completed" || item.status === "unconfirmed",
+        )
+        .reduce(
+          (acc: number, item: any) => Number(acc) + Number(item.amount),
+          0,
+        );
+      return {
+        ...o,
+        remaining: payable - payment,
+      };
+    }) ?? [];
+
+  const totalDebt = useMemo(
+    () =>
+      ordersList.reduce(
+        (acc: any, curr: any) => acc + (curr.remaining || 0),
+        0,
+      ),
+    [ordersList],
+  );
 
   return (
     <>
@@ -703,6 +750,7 @@ export default function OrderDetailsPage({
                             } else {
                               // Add new row
                               append({
+                                orderIndex: fields.length + 1,
                                 productId: product.id,
                                 productName: product.name,
                                 productSKU: product.sku,
@@ -729,6 +777,7 @@ export default function OrderDetailsPage({
                 <table className="w-full hidden md:table">
                   <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100">
                     <tr>
+                      <th className="px-2 py-3 w-[10%]">#</th>
                       <th className="px-5 py-3 text-left w-[40%]">Product</th>
                       <th className="px-2 py-3 text-center w-[12%]">Bag</th>
                       <th className="px-2 py-3 text-center w-[12%]">Qty</th>
@@ -754,6 +803,20 @@ export default function OrderDetailsPage({
                         key={field.id}
                         className="group hover:bg-slate-50 transition-colors"
                       >
+                        <td className="px-2 py-3">
+                          <Input
+                            type="number"
+                            disabled={!isEditMode}
+                            className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
+                            value={watchedItems[index]?.orderIndex}
+                            onChange={(e) => {
+                              form.setValue(
+                                `items.${index}.orderIndex`,
+                                e.currentTarget.valueAsNumber,
+                              );
+                            }}
+                          />
+                        </td>
                         <td className="px-5 py-3">
                           <div className="flex flex-row items-center gap-3">
                             <div className="relative overflow-hidden rounded-lg w-10 h-10 border border-slate-100 bg-white shrink-0">
@@ -885,6 +948,20 @@ export default function OrderDetailsPage({
                                 <X size={16} />
                               </Button>
                             )}
+                          </div>
+                          <div>
+                            <Input
+                              type="number"
+                              disabled={!isEditMode}
+                              className="h-7 w-12 text-center border-none text-xs font-bold p-0"
+                              value={watchedItems[index]?.orderIndex}
+                              onChange={(e) =>
+                                form.setValue(
+                                  `items.${index}.orderIndex`,
+                                  e.currentTarget.valueAsNumber,
+                                )
+                              }
+                            />
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <div className="flex items-center border rounded-md">
@@ -1504,6 +1581,7 @@ export default function OrderDetailsPage({
             watchedItems={watchedItems}
             calculatedPayable={calculatedPayable}
             carGate={orderData?.carGate?.name}
+            totalDebt={totalDebt}
           />
         </div>
       </div>

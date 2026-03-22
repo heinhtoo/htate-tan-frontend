@@ -13,6 +13,7 @@ export const InvoicePrintV2 = forwardRef<
     paymentData: PaymentResponse[];
     warehouseAddress: any;
     carGate?: string;
+    totalDebt?: number;
   }
 >(
   (
@@ -23,6 +24,7 @@ export const InvoicePrintV2 = forwardRef<
       paymentData,
       warehouseAddress,
       carGate,
+      totalDebt,
     },
     ref,
   ) => {
@@ -34,8 +36,10 @@ export const InvoicePrintV2 = forwardRef<
         : completedPayments[0]?.type || "Credit";
 
     // Reduced items per page slightly to accommodate increased row height
-    const ITEMS_PER_PAGE = 10;
     const pages = [];
+
+    const isA4 = watchedItems.length > 10;
+    const ITEMS_PER_PAGE = isA4 ? 20 : 10;
     for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
     }
@@ -59,7 +63,9 @@ export const InvoicePrintV2 = forwardRef<
         {pages.map((pageItems, pageIndex) => (
           <div
             key={pageIndex}
-            className="print-page w-[140mm] h-[200mm] bg-white text-[#0f172a] flex flex-col antialiased shrink-0 relative"
+            className={`print-page bg-white text-[#0f172a] flex flex-col antialiased shrink-0 relative ${
+              isA4 ? "w-[210mm] h-[297mm]" : "w-[140mm] h-[200mm]"
+            }`}
             style={{ boxSizing: "border-box" }}
           >
             {/* --- WATERMARK --- */}
@@ -179,7 +185,7 @@ export const InvoicePrintV2 = forwardRef<
                       className="h-7 border-b border-[#94a3b8] text-sm"
                     >
                       <td className="border-x border-[#0f172a] text-center">
-                        {pageIndex * ITEMS_PER_PAGE + i + 1}
+                        {item.orderIndex}
                       </td>
                       <td className="border-r border-[#0f172a] px-2 font-medium  max-w-[220px]">
                         <div>
@@ -240,6 +246,14 @@ export const InvoicePrintV2 = forwardRef<
                 <div className="w-48 text-right flex flex-col items-end">
                   {pageIndex === pages.length - 1 ? (
                     <>
+                      {totalDebt && totalDebt > 0 && (
+                        <div className="w-full flex justify-between text-xs leading-tight">
+                          <span className="text-[8px] self-end uppercase">
+                            ကျန်ငွေ
+                          </span>
+                          <span>{totalDebt.toLocaleString()} Ks</span>
+                        </div>
+                      )}
                       <div className="w-full flex justify-between text-xs leading-tight">
                         <span className="text-[8px] self-end uppercase">
                           ပို့ဆောင်ခ:

@@ -1,5 +1,6 @@
 export type OrderItemResponse = {
   id: number;
+  orderIndex: number;
   productId: number;
   productName: string;
   productSKU: string;
