@@ -13,7 +13,7 @@ export const InvoicePrintV2 = forwardRef<
     paymentData: PaymentResponse[];
     warehouseAddress: any;
     carGate?: string;
-    totalDebt?: number;
+    totalDebt: number;
   }
 >(
   (
@@ -246,7 +246,7 @@ export const InvoicePrintV2 = forwardRef<
                 <div className="w-48 text-right flex flex-col items-end">
                   {pageIndex === pages.length - 1 ? (
                     <>
-                      {totalDebt && totalDebt > 0 && (
+                      {totalDebt > 0 && (
                         <div className="w-full flex justify-between text-xs leading-tight">
                           <span className="text-[8px] self-end uppercase">
                             ကျန်ငွေ

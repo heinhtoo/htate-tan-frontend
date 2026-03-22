@@ -639,19 +639,21 @@ export default function OrderDetailsPage({
                   >
                     Discard
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleCancel}
-                    disabled={isPending}
-                    variant="outline"
-                    className="h-9 px-4 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 font-bold rounded-full text-xs uppercase tracking-wide"
-                  >
-                    {cancelMutation.isPending ? (
-                      "Cancelling..."
-                    ) : (
-                      <>Cancel Order</>
-                    )}
-                  </Button>
+                  {user?.isAdmin && (
+                    <Button
+                      size="sm"
+                      onClick={handleCancel}
+                      disabled={isPending}
+                      variant="outline"
+                      className="h-9 px-4 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 font-bold rounded-full text-xs uppercase tracking-wide"
+                    >
+                      {cancelMutation.isPending ? (
+                        "Cancelling..."
+                      ) : (
+                        <>Cancel Order</>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     onClick={() => updateMutation.mutate(form.getValues())}
@@ -807,7 +809,7 @@ export default function OrderDetailsPage({
                           <Input
                             type="number"
                             disabled={!isEditMode}
-                            className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
+                            className="hidden lg:flex h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                             value={watchedItems[index]?.orderIndex}
                             onChange={(e) => {
                               form.setValue(
@@ -949,21 +951,23 @@ export default function OrderDetailsPage({
                               </Button>
                             )}
                           </div>
-                          <div>
-                            <Input
-                              type="number"
-                              disabled={!isEditMode}
-                              className="h-7 w-12 text-center border-none text-xs font-bold p-0"
-                              value={watchedItems[index]?.orderIndex}
-                              onChange={(e) =>
-                                form.setValue(
-                                  `items.${index}.orderIndex`,
-                                  e.currentTarget.valueAsNumber,
-                                )
-                              }
-                            />
-                          </div>
+
                           <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center border rounded-md">
+                              <Input
+                                type="number"
+                                disabled={!isEditMode}
+                                className="h-7 w-12 text-center border-none text-xs font-bold p-0"
+                                value={watchedItems[index]?.subQuantity || 0}
+                                onChange={(e) =>
+                                  form.setValue(
+                                    `items.${index}.subQuantity`,
+                                    e.currentTarget.valueAsNumber,
+                                  )
+                                }
+                              />{" "}
+                              <span className="text-xs pr-1.5">Bag</span>
+                            </div>
                             <div className="flex items-center border rounded-md">
                               <Input
                                 type="number"
