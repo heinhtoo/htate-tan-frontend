@@ -246,14 +246,6 @@ export const InvoicePrintV2 = forwardRef<
                 <div className="w-48 text-right flex flex-col items-end">
                   {pageIndex === pages.length - 1 ? (
                     <>
-                      {totalDebt > 0 && (
-                        <div className="w-full flex justify-between text-xs leading-tight">
-                          <span className="text-[8px] self-end uppercase">
-                            ကျန်ငွေ
-                          </span>
-                          <span>{totalDebt.toLocaleString()} Ks</span>
-                        </div>
-                      )}
                       <div className="w-full flex justify-between text-xs leading-tight">
                         <span className="text-[8px] self-end uppercase">
                           ပို့ဆောင်ခ:
@@ -282,6 +274,14 @@ export const InvoicePrintV2 = forwardRef<
                         </span>
                         <span>{calculatedPayable.toLocaleString()} Ks</span>
                       </div>
+                      {totalDebt > 0 && (
+                        <div className="w-full flex justify-between text-xs leading-tight">
+                          <span className="text-[8px] self-end uppercase">
+                            ကျန်ငွေ
+                          </span>
+                          <span>{totalDebt.toLocaleString()} Ks</span>
+                        </div>
+                      )}
                       <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
                         <span className="text-[9px] self-end mb-0.5 uppercase whitespace-nowrap">
                           Cash Received:
@@ -293,7 +293,12 @@ export const InvoicePrintV2 = forwardRef<
                           Balance:
                         </span>
                         <span>
-                          {(calculatedPayable - paidAmount).toLocaleString()} Ks
+                          {(
+                            calculatedPayable +
+                            totalDebt -
+                            paidAmount
+                          ).toLocaleString()}{" "}
+                          Ks
                         </span>
                       </div>
                     </>

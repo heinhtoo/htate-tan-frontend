@@ -74,16 +74,15 @@ export default function OrderPrintPage() {
       };
     }) ?? [];
 
+  const orderData = order?.response?.data;
+
   const totalDebt = useMemo(
     () =>
-      ordersList.reduce(
-        (acc: any, curr: any) => acc + (curr.remaining || 0),
-        0,
-      ),
-    [ordersList],
+      ordersList
+        .filter((item: any) => item.id !== orderData?.id)
+        .reduce((acc: any, curr: any) => acc + (curr.remaining || 0), 0),
+    [ordersList, orderData],
   );
-
-  const orderData = order?.response?.data;
 
   useEffect(() => {
     const root = document.documentElement;

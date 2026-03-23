@@ -461,11 +461,10 @@ export default function OrderDetailsPage({
 
   const totalDebt = useMemo(
     () =>
-      ordersList.reduce(
-        (acc: any, curr: any) => acc + (curr.remaining || 0),
-        0,
-      ),
-    [ordersList],
+      ordersList
+        .filter((item: any) => item.id !== orderData?.id)
+        .reduce((acc: any, curr: any) => acc + (curr.remaining || 0), 0),
+    [ordersList, orderData],
   );
 
   return (
