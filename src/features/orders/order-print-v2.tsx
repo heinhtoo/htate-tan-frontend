@@ -38,7 +38,7 @@ export const InvoicePrintV2 = forwardRef<
     // Reduced items per page slightly to accommodate increased row height
     const pages = [];
 
-    const isA4 = watchedItems.length > 10;
+    const isA4 = false;
     const ITEMS_PER_PAGE = isA4 ? 20 : 10;
     for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
