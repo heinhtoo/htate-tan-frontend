@@ -809,7 +809,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="hidden lg:flex h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            value={watchedItems[index]?.orderIndex}
+                            defaultValue={watchedItems[index]?.orderIndex}
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.orderIndex`,
@@ -1581,7 +1581,9 @@ export default function OrderDetailsPage({
             warehouseAddress={orderData?.warehouse as any}
             paymentData={orderData?.payments as any}
             orderData={orderData}
-            watchedItems={watchedItems}
+            watchedItems={watchedItems.sort(
+              (a, b) => a.orderIndex - b.orderIndex,
+            )}
             calculatedPayable={calculatedPayable}
             carGate={orderData?.carGate?.name}
             totalDebt={totalDebt}

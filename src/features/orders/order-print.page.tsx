@@ -512,7 +512,9 @@ export default function OrderPrintPage() {
           <div ref={printRef} className="transform scale-100 origin-top">
             <InvoicePrintV2
               orderData={orderData}
-              watchedItems={orderData.items}
+              watchedItems={orderData.items.sort(
+                (a, b) => a.orderIndex - b.orderIndex,
+              )}
               calculatedPayable={orderData.totals.payable}
               paymentData={orderData.payments}
               warehouseAddress={orderData.warehouse}
