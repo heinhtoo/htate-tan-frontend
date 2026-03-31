@@ -11,4 +11,5 @@ export type CustomerResponse = {
   creditLimit: number;
   totalDebt: number;
   initialDebt: number;
+  showDebt: boolean;
 };

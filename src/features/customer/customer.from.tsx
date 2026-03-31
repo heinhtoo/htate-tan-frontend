@@ -9,6 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ErrorResponse } from "@/lib/actionHelper";
 import { useErrorStore } from "@/store/error.store";
@@ -47,6 +48,7 @@ export default function CustomerForm({
       township: initialData?.township ?? "",
       creditLimit: initialData?.creditLimit ?? 0,
       initialDebt: initialData?.initialDebt ?? 0,
+      showDebt: initialData?.showDebt ?? false,
     },
   });
 
@@ -75,7 +77,7 @@ export default function CustomerForm({
     toast.success(
       isEditing
         ? `Customer "${values.name}" updated successfully.`
-        : `New Customer "${values.name}" created.`
+        : `New Customer "${values.name}" created.`,
     );
 
     onSubmitComplete();
@@ -194,6 +196,25 @@ export default function CustomerForm({
               <FormLabel>Initial Debt</FormLabel>
               <FormControl>
                 <Input {...field} disabled={isLoading} type="number" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="showDebt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Show Debt</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

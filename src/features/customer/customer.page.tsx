@@ -140,6 +140,7 @@ export default function CustomerPage({ isCustomer }: { isCustomer: boolean }) {
                   orderKey="total_debt"
                   toggleSort={toggleSort}
                 />
+                <TableHead>Show Debt</TableHead>
                 <TableHead className="text-right w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -186,7 +187,7 @@ export default function CustomerPage({ isCustomer }: { isCustomer: boolean }) {
 
                         const percentage = Math.min(
                           (customer.totalDebt / customer.creditLimit) * 100,
-                          100
+                          100,
                         );
                         const isOverLimit =
                           customer.totalDebt > customer.creditLimit;
@@ -242,6 +243,17 @@ export default function CustomerPage({ isCustomer }: { isCustomer: boolean }) {
                       })()}
                     </TableCell>
                     <TableCell>{formatCurrency(customer.totalDebt)}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          customer.showDebt
+                            ? "bg-red-100 text-red-700 border border-red-200"
+                            : "bg-green-100 text-green-700 border border-green-200"
+                        }`}
+                      >
+                        {customer.showDebt ? "DEBT ON" : "DEBT OFF"}
+                      </span>
+                    </TableCell>
 
                     <TableCell className="text-right space-x-2">
                       {/* 

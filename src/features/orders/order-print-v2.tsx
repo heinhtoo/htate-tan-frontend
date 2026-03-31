@@ -14,6 +14,7 @@ export const InvoicePrintV2 = forwardRef<
     warehouseAddress: any;
     carGate?: string;
     totalDebt: number;
+    showDebt: boolean;
   }
 >(
   (
@@ -25,6 +26,7 @@ export const InvoicePrintV2 = forwardRef<
       warehouseAddress,
       carGate,
       totalDebt,
+      showDebt,
     },
     ref,
   ) => {
@@ -44,6 +46,8 @@ export const InvoicePrintV2 = forwardRef<
       pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
     }
     if (pages.length === 0) pages.push([]);
+
+    const debtAmount = showDebt ? totalDebt : 0;
 
     if (!orderData) {
       return <></>;
@@ -274,12 +278,12 @@ export const InvoicePrintV2 = forwardRef<
                         </span>
                         <span>{calculatedPayable.toLocaleString()} Ks</span>
                       </div>
-                      {totalDebt > 0 && (
+                      {debtAmount > 0 && (
                         <div className="w-full flex justify-between text-xs leading-tight">
                           <span className="text-[8px] self-end uppercase">
                             ကျန်ငွေ
                           </span>
-                          <span>{totalDebt.toLocaleString()} Ks</span>
+                          <span>{debtAmount.toLocaleString()} Ks</span>
                         </div>
                       )}
                       <div className="w-full flex justify-between leading-tight border-b border-[#0f172a] pb-1.5">
@@ -295,7 +299,7 @@ export const InvoicePrintV2 = forwardRef<
                         <span>
                           {(
                             calculatedPayable +
-                            totalDebt -
+                            debtAmount -
                             paidAmount
                           ).toLocaleString()}{" "}
                           Ks

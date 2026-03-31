@@ -26,4 +26,6 @@ export const CustomerSchema = z.object({
       error: "Initial Debt is required",
     })
     .int(),
+
+  showDebt: z.boolean(),
 });

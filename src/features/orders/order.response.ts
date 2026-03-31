@@ -37,6 +37,7 @@ export type OrderResponse = {
     address: string;
     state: string;
     city: string;
+    showDebt: boolean;
   };
 
   warehouse: {

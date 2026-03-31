@@ -10,6 +10,7 @@ import {
   Coins,
   CreditCard,
   Edit,
+  Eye,
   FileText,
   Monitor,
   Package,
@@ -197,6 +198,7 @@ export default function OrderDetailsPage({
   const [isProductDrawerOpen, setIsProductDrawerOpen] = useState(false);
   const [customerId, setCustomerId] = useState<string | undefined>(undefined);
   const [createdAt, setCreatedAt] = useState<Date | undefined>(undefined);
+  const [showDebt, setShowDebt] = useState(false);
 
   const { data: customerData } = useQuery({
     queryKey: ["customer-details", customerId],
@@ -220,6 +222,7 @@ export default function OrderDetailsPage({
     if (orderData) {
       setCustomerId(orderData.customer?.id ?? undefined);
       setCreatedAt(new Date(orderData.createdAt));
+      setShowDebt(orderData.customer?.showDebt ?? false);
     } else {
       setCustomerId(undefined);
       setCreatedAt(undefined);
@@ -1436,6 +1439,18 @@ export default function OrderDetailsPage({
                     </Badge>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Eye size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Show Debt
+                    </p>
+                    <Switch checked={showDebt} onCheckedChange={setShowDebt} />
+                  </div>
+                </div>
               </div>
             </Card>
 
@@ -1587,6 +1602,7 @@ export default function OrderDetailsPage({
             calculatedPayable={calculatedPayable}
             carGate={orderData?.carGate?.name}
             totalDebt={totalDebt}
+            showDebt={showDebt}
           />
         </div>
       </div>

@@ -520,6 +520,7 @@ export default function OrderPrintPage() {
               warehouseAddress={orderData.warehouse}
               carGate={orderData.carGate?.name}
               totalDebt={totalDebt}
+              showDebt={orderData.customer?.showDebt ?? false}
             />
           </div>
         </div>
