@@ -85,7 +85,7 @@ import POSProductSection from "../pos/pos-product-section";
 import { cancelPOSOrder } from "../pos/pos.action";
 import { InvoicePrint } from "./order-print";
 import { InvoicePrintV2 } from "./order-print-v2";
-import { OrderStatus } from "./order.response";
+import { OrderStatus, type OrderResponse } from "./order.response";
 
 export default function OrderDetailsPage({
   isCustomer,
@@ -465,7 +465,10 @@ export default function OrderDetailsPage({
   const totalDebt = useMemo(
     () =>
       ordersList
-        .filter((item: any) => item.id !== orderData?.id)
+        .filter(
+          (item: OrderResponse) =>
+            item.id !== orderData?.id && item.status !== "Cancelled",
+        )
         .reduce((acc: any, curr: any) => acc + (curr.remaining || 0), 0),
     [ordersList, orderData],
   );

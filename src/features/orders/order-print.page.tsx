@@ -79,7 +79,10 @@ export default function OrderPrintPage() {
   const totalDebt = useMemo(
     () =>
       ordersList
-        .filter((item: any) => item.id !== orderData?.id)
+        .filter(
+          (item: any) =>
+            item.id !== orderData?.id && item.status !== "Cancelled",
+        )
         .reduce((acc: any, curr: any) => acc + (curr.remaining || 0), 0),
     [ordersList, orderData],
   );
