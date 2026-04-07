@@ -38,6 +38,7 @@ export type OrderResponse = {
     state: string;
     city: string;
     showDebt: boolean;
+    phoneNumber: string;
   };
 
   warehouse: {

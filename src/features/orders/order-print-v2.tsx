@@ -2,12 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { forwardRef } from "react";
 import headline from "./headline.png";
-import type { PaymentResponse } from "./order.response";
+import type { OrderResponse, PaymentResponse } from "./order.response";
 
 export const InvoicePrintV2 = forwardRef<
   HTMLDivElement,
   {
-    orderData: any;
+    orderData: OrderResponse;
     watchedItems: any[];
     calculatedPayable: number;
     paymentData: PaymentResponse[];
@@ -120,7 +120,8 @@ export const InvoicePrintV2 = forwardRef<
                     {orderData?.customer?.name || "Walk-in Customer"}{" "}
                     {orderData?.customer?.city
                       ? `(${orderData.customer.city})`
-                      : ""}
+                      : ""}{" "}
+                    {orderData?.customer?.phoneNumber}
                   </span>
                 </div>
                 <div className="flex flex-row items-start">
@@ -250,14 +251,18 @@ export const InvoicePrintV2 = forwardRef<
                 <div className="w-48 text-right flex flex-col items-end">
                   {pageIndex === pages.length - 1 ? (
                     <>
-                      <div className="w-full flex justify-between text-xs leading-tight">
-                        <span className="text-[8px] self-end uppercase">
-                          ပို့ဆောင်ခ:
-                        </span>
-                        <span>
-                          {orderData?.totals?.otherCharges.toLocaleString()} Ks
-                        </span>
-                      </div>
+                      {orderData.otherCharges.map((item) => (
+                        <div
+                          className="w-full flex justify-between text-xs leading-tight"
+                          key={"order-charge-" + item.id}
+                        >
+                          <span className="text-[8px] self-end uppercase">
+                            {item.name}
+                          </span>
+                          <span>{item.amount.toLocaleString()} Ks</span>
+                        </div>
+                      ))}
+
                       <div className="w-full flex justify-between text-xs leading-tight">
                         <span className="text-[8px] self-end uppercase">
                           Discount:
