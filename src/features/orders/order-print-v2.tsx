@@ -7,7 +7,7 @@ import type { OrderResponse, PaymentResponse } from "./order.response";
 export const InvoicePrintV2 = forwardRef<
   HTMLDivElement,
   {
-    orderData: OrderResponse;
+    orderData?: OrderResponse;
     watchedItems: any[];
     calculatedPayable: number;
     paymentData: PaymentResponse[];
