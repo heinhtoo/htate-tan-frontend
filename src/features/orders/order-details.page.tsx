@@ -815,7 +815,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="hidden lg:flex h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            defaultValue={watchedItems[index]?.orderIndex}
+                            value={field?.orderIndex}
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.orderIndex`,
@@ -840,7 +840,9 @@ export default function OrderDetailsPage({
                                 {field.productName}
                               </p>
                               <p className="text-[10px] text-slate-400 font-mono">
-                                {field.productSKU}
+                                {field.productSKU} {index}{" "}
+                                {watchedItems[index].subQuantity}{" "}
+                                {watchedItems[index].quantity}
                               </p>
                             </div>
                           </div>
@@ -850,7 +852,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            value={watchedItems[index]?.subQuantity || 0}
+                            defaultValue={watchedItems[index]?.subQuantity || 0}
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.subQuantity`,
@@ -864,7 +866,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            value={watchedItems[index]?.quantity || 0}
+                            defaultValue={field?.quantity || 0}
                             onChange={(e) => {
                               form.setValue(
                                 `items.${index}.quantity`,
