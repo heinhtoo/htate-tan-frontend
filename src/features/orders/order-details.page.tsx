@@ -841,8 +841,6 @@ export default function OrderDetailsPage({
                               </p>
                               <p className="text-[10px] text-slate-400 font-mono">
                                 {field.productSKU} {index}{" "}
-                                {watchedItems[index].subQuantity}{" "}
-                                {watchedItems[index].quantity}
                               </p>
                             </div>
                           </div>
