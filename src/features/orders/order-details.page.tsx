@@ -1,11 +1,41 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import PaymentTypeDropdown from "@/components/dropdown/payment-type.dropdown";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import clsx from "clsx";
 import {
   ArrowLeft,
   Calendar,
+  Check,
   CheckCircle2,
   ChevronDown,
+  ChevronsUpDown,
   Clock,
   Coins,
   CreditCard,
@@ -27,22 +57,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
-
-import PaymentTypeDropdown from "@/components/dropdown/payment-type.dropdown";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { getCarGates } from "../car-gate/car-gate.action";
 import { getOrderDetails, updateOrder } from "./orders.action";
 import { getStatusConfig } from "./orders.page";
@@ -405,6 +419,9 @@ export default function OrderDetailsPage({
     contentRef: printRefV2,
     documentTitle: "Order - " + orderData?.id,
   });
+
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(orderData?.carGate?.id?.toString() || "");
 
   const handlePrint = () => {
     if (defaultVersion === "v1") {
@@ -1301,45 +1318,84 @@ export default function OrderDetailsPage({
                     </p>
                     {isEditMode ? (
                       <div className="h-8">
-                        <Select
-                          onValueChange={(v) =>
-                            form.setValue("carGateId", parseInt(v))
-                          }
-                          defaultValue={orderData?.carGate?.id?.toString()}
-                        >
-                          <SelectTrigger className="h-8 text-xs bg-slate-50 border-slate-200 focus:bg-white focus:ring-1 focus:ring-indigo-200">
-                            <SelectValue placeholder="Select Gate" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CAR_GATES?.data.map((gate) => (
-                              <SelectItem
-                                key={gate.id}
-                                value={gate.id.toString()}
-                                className="text-xs"
-                              >
-                                {gate.gateName}
-                              </SelectItem>
-                            ))}
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
                             <Button
-                              className="w-full border-t text-xs "
-                              variant={"ghost"}
-                              type="button"
-                              onClick={() => {
-                                openPanel({
-                                  title: "Create New CarGate",
-                                  content: (
-                                    <CarGateForm
-                                      initialData={null}
-                                      onSubmitComplete={() => refetchCarGates()}
-                                    />
-                                  ),
-                                });
-                              }}
+                              variant="outline"
+                              role="combobox"
+                              className="h-8 text-xs justify-between w-full"
                             >
-                              Add car gate
+                              {value
+                                ? CAR_GATES?.data.find(
+                                    (g) => g.id.toString() === value,
+                                  )?.gateName
+                                : "Select Gate"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                             </Button>
-                          </SelectContent>
-                        </Select>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="p-0 w-full">
+                            <Command>
+                              <CommandInput
+                                placeholder="Search gate..."
+                                className="text-xs"
+                              />
+
+                              <CommandEmpty>No gate found.</CommandEmpty>
+
+                              <CommandGroup>
+                                {CAR_GATES?.data.map((gate) => (
+                                  <CommandItem
+                                    key={gate.id}
+                                    value={gate.gateName}
+                                    onSelect={() => {
+                                      const newValue = gate.id.toString();
+                                      setValue(newValue);
+                                      form.setValue("carGateId", gate.id);
+                                      setOpen(false);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    <Check
+                                      className={clsx(
+                                        "mr-2 h-4 w-4",
+                                        value === gate.id.toString()
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    {gate.gateName}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+
+                              {/* Add new gate button */}
+                              <div className="border-t">
+                                <Button
+                                  className="w-full text-xs"
+                                  variant="ghost"
+                                  type="button"
+                                  onClick={() => {
+                                    setOpen(false);
+                                    openPanel({
+                                      title: "Create New CarGate",
+                                      content: (
+                                        <CarGateForm
+                                          initialData={null}
+                                          onSubmitComplete={() =>
+                                            refetchCarGates()
+                                          }
+                                        />
+                                      ),
+                                    });
+                                  }}
+                                >
+                                  + Add car gate
+                                </Button>
+                              </div>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     ) : (
                       <p className="text-sm font-bold text-slate-800 truncate">

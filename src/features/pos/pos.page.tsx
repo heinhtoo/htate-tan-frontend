@@ -56,8 +56,8 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useNavigate } from "react-router";
+import { CarGateCombobox } from "../car-gate/car-gate-combo-box";
 import { getCarGates } from "../car-gate/car-gate.action";
-import CarGateForm from "../car-gate/car-gate.from";
 import { getCustomers } from "../customer/customer.action";
 import CustomerForm from "../customer/customer.from";
 import { getOtherCharges } from "../other-charge/other-charge.action";
@@ -1022,40 +1022,17 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
                 <Truck className="h-3 w-3" /> Car Gate
               </Label>
-              <Select
-                onValueChange={(v) => setSelectedCarGate(parseInt(v))}
-                value={checkoutDetails.carGateId?.toString()}
-              >
-                <SelectTrigger className="rounded-2xl h-12 bg-slate-50 border-none focus:ring-2 focus:ring-primary/20 transition-all w-full">
-                  <SelectValue placeholder="Select Gate" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                  {CAR_GATES?.data.map((gate) => (
-                    <SelectItem key={gate.id} value={gate.id.toString()}>
-                      {gate.gateName}
-                    </SelectItem>
-                  ))}
-                  <Button
-                    className="w-full border-t text-xs "
-                    variant={"ghost"}
-                    type="button"
-                    onClick={() => {
-                      setIsConfirmDialogOpen(false);
-                      openPanel({
-                        title: "Create New CarGate",
-                        content: (
-                          <CarGateForm
-                            initialData={null}
-                            onSubmitComplete={() => refetchCarGates()}
-                          />
-                        ),
-                      });
-                    }}
-                  >
-                    Add car gate
-                  </Button>
-                </SelectContent>
-              </Select>
+              <CarGateCombobox
+                CAR_GATES={CAR_GATES}
+                checkoutDetails={{
+                  ...checkoutDetails,
+                  carGateId: checkoutDetails.carGateId?.toString(),
+                }}
+                setSelectedCarGate={setSelectedCarGate}
+                setIsConfirmDialogOpen={setIsConfirmDialogOpen}
+                openPanel={openPanel}
+                refetchCarGates={refetchCarGates}
+              />
             </div>
 
             {/* 2. Charges & Payments Section */}
