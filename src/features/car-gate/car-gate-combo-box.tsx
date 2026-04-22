@@ -30,7 +30,7 @@ export function CarGateCombobox({
   const [open, setOpen] = React.useState(false);
 
   const selectedGate = CAR_GATES?.data.find(
-    (g: any) => g.id === checkoutDetails.carGateId,
+    (g: any) => g.id + "" === checkoutDetails.carGateId,
   );
 
   return (
