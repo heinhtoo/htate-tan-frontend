@@ -246,6 +246,7 @@ export const InvoicePrintV2 = forwardRef<
                     • အနာပစ္စည်းများအား လဲမည်ဆိုပါက ဘောက်ချာယူလာပါရန်၊
                     ဘောက်ချာမပါလျှင် မလဲပေးပါ။
                   </p>
+                  <p className="text-xs mt-3">Remark: {orderData?.remark}</p>
                 </div>
 
                 <div className="w-48 text-right flex flex-col items-end">
