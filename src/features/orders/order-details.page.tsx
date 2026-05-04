@@ -832,13 +832,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="hidden lg:flex h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            value={field?.orderIndex}
-                            onChange={(e) => {
-                              form.setValue(
-                                `items.${index}.orderIndex`,
-                                e.currentTarget.valueAsNumber,
-                              );
-                            }}
+                            {...form.register(`items.${index}.orderIndex`, { valueAsNumber: true })}
                           />
                         </td>
                         <td className="px-5 py-3">
@@ -867,13 +861,7 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            defaultValue={watchedItems[index]?.subQuantity || 0}
-                            onChange={(e) => {
-                              form.setValue(
-                                `items.${index}.subQuantity`,
-                                e.currentTarget.valueAsNumber,
-                              );
-                            }}
+                            {...form.register(`items.${index}.subQuantity`, { valueAsNumber: true })}
                           />
                         </td>
                         <td className="px-2 py-3">
@@ -881,26 +869,14 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            defaultValue={field?.quantity || 0}
-                            onChange={(e) => {
-                              form.setValue(
-                                `items.${index}.quantity`,
-                                e.currentTarget.valueAsNumber,
-                              );
-                            }}
+                            {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
                           />
                         </td>
                         <td className="px-2 py-3">
                           <Input
                             type="number"
                             disabled={!isEditMode}
-                            defaultValue={Math.round(field.unitPrice)}
-                            onChange={(e) => {
-                              form.setValue(
-                                `items.${index}.unitPrice`,
-                                e.currentTarget.valueAsNumber,
-                              );
-                            }}
+                            {...form.register(`items.${index}.unitPrice`, { valueAsNumber: true })}
                             className="h-8 text-right font-medium bg-transparent border-transparent hover:border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                           />
                         </td>
