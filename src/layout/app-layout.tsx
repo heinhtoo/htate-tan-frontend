@@ -39,15 +39,16 @@ import {
   Cog,
   CreditCard,
   DownloadIcon,
+  HardDriveDownload,
   ImageIcon,
   LayoutDashboard,
   LockIcon,
   PackageOpen,
   Scale,
-  ShapesIcon, // Renamed from SquareTerminal
-  ShoppingCart, // New icon for Inventory
+  ShapesIcon,
+  ShoppingCart,
   Store,
-  UserCog, // New icon for Reports
+  UserCog,
   Users,
 } from "lucide-react";
 import React from "react";
@@ -263,6 +264,12 @@ export default function AppLayout() {
         url: "/settings",
         icon: Cog,
         addedDate: new Date(2025, 1, 28),
+      },
+      {
+        title: "Database Backup",
+        url: "/backup",
+        icon: HardDriveDownload,
+        addedDate: new Date(2026, 4, 5),
       },
     ],
   };

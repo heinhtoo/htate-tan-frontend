@@ -832,7 +832,9 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="hidden lg:flex h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            {...form.register(`items.${index}.orderIndex`, { valueAsNumber: true })}
+                            {...form.register(`items.${index}.orderIndex`, {
+                              valueAsNumber: true,
+                            })}
                           />
                         </td>
                         <td className="px-5 py-3">
@@ -861,7 +863,9 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            {...form.register(`items.${index}.subQuantity`, { valueAsNumber: true })}
+                            {...form.register(`items.${index}.subQuantity`, {
+                              valueAsNumber: true,
+                            })}
                           />
                         </td>
                         <td className="px-2 py-3">
@@ -869,14 +873,18 @@ export default function OrderDetailsPage({
                             type="number"
                             disabled={!isEditMode}
                             className="h-8 text-center font-bold bg-transparent border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
-                            {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
+                            {...form.register(`items.${index}.quantity`, {
+                              valueAsNumber: true,
+                            })}
                           />
                         </td>
                         <td className="px-2 py-3">
                           <Input
                             type="number"
                             disabled={!isEditMode}
-                            {...form.register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                            {...form.register(`items.${index}.unitPrice`, {
+                              valueAsNumber: true,
+                            })}
                             className="h-8 text-right font-medium bg-transparent border-transparent hover:border-slate-100 focus:bg-white focus:border-indigo-200 text-xs px-1"
                           />
                         </td>

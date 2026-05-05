@@ -23,6 +23,7 @@ import ProductPage from "@/features/product/product.page";
 import { getProfile } from "@/features/profile/profile.action";
 import Wrapper from "@/features/providers/Wrapper";
 import FinancialReport from "@/features/reports/financial-report";
+import BackupPage from "@/features/backup/backup.page";
 import SettingPage from "@/features/setting/setting.page";
 import StaffPage from "@/features/staff/staff.page";
 import UnitConversionPage from "@/features/unit-conversion/unit-conversion.page";
@@ -186,6 +187,7 @@ function RouteList() {
               <Route path="unit-conversions" element={<UnitConversionPage />} />
               <Route path="car-gate" element={<CarGatePage />} />
               <Route path="settings" element={<SettingPage />} />
+              <Route path="backup" element={<BackupPage />} />
             </Route>
           </Route>
         </Route>
