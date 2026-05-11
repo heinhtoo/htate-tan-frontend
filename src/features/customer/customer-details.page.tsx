@@ -379,11 +379,9 @@ const CustomerManagementSystem = () => {
                   }}
                 >
                   <TableCell className="py-5 pl-8 text-slate-500 text-sm font-medium">
-                    {new Date(order.createdAt).toLocaleDateString("en-ca", {
-                      year: "numeric",
-                      month: "short",
-                      day: "2-digit",
-                    })}
+                    {new Date(order.createdAt)
+                      .toLocaleDateString("en-GB")
+                      .replace(/\//g, "-")}
                   </TableCell>
                   <TableCell className="font-bold text-slate-900">
                     #ORD-{order.id}
@@ -423,11 +421,9 @@ const CustomerManagementSystem = () => {
                     {/* DATE HEADER */}
                     <div className="flex justify-between items-center px-6 py-4 bg-slate-50 border-b">
                       <p className="font-bold text-slate-700">
-                        {new Date(date).toLocaleDateString("en-CA", {
-                          year: "numeric",
-                          month: "short",
-                          day: "2-digit",
-                        })}
+                        {new Date(date)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")}
                       </p>
                       <p className="text-sm font-bold text-indigo-600">
                         Total: {total.toLocaleString()} MMK
