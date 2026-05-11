@@ -524,7 +524,9 @@ export default function OrderDetailsPage({
                   {orderData?.createdAt && (
                     <span className="flex items-center gap-1">
                       <Calendar size={10} />
-                      {new Date(orderData.createdAt).toLocaleDateString()}
+                      {new Date(orderData.createdAt)
+                        .toLocaleDateString("en-GB")
+                        .replace(/\//g, "-")}
                     </span>
                   )}
                   {orderData?.createdAt && (

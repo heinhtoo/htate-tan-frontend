@@ -390,12 +390,9 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        {new Date(order.createdAt).toLocaleDateString("en-ca", {
-                          year: "numeric",
-                          month: "short",
-                          day: "2-digit",
-                        })}{" "}
-                        ·{" "}
+                        {new Date(order.createdAt)
+                          .toLocaleDateString("en-GB")
+                          .replace(/\//g, "-")}{" "}
                         {new Date(order.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
