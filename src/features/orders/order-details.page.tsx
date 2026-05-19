@@ -63,7 +63,6 @@ import { getStatusConfig } from "./orders.page";
 
 import CustomerDropdown from "@/components/dropdown/customer.dropdown";
 import OtherChargeDropdown from "@/components/dropdown/other-charge.dropdown";
-import DatePicker from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -91,6 +90,8 @@ import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/authStore";
 import { useErrorStore } from "@/store/error.store";
 import { usePanelStore } from "@/store/panelStore";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import CarGateForm from "../car-gate/car-gate.from";
@@ -328,7 +329,7 @@ export default function OrderDetailsPage({
         remark: values.remark,
         totalAdditionalDiscountAmount: values.totalAdditionalDiscountAmount,
         customerId: customerId,
-        createdAt: createdAt?.toLocaleDateString("en-ca"),
+        createdAt: createdAt,
 
         // Items that exist in original but not in current fields
         removedItems: originalItems
@@ -1267,6 +1268,52 @@ export default function OrderDetailsPage({
               <div className="p-5 space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
+                    <Calendar size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                      Order Date
+                    </p>
+                    {isEditMode ? (
+                      <div className="h-8">
+                        <DatePicker
+                          selected={createdAt}
+                          onChange={(date: any) =>
+                            setCreatedAt(date ?? undefined)
+                          }
+                          showTimeSelect
+                          timeFormat="hh:mm aa"
+                          timeIntervals={15}
+                          dateFormat="MMMM d, yyyy h:mm aa"
+                          placeholderText="Select date and time"
+                          className="bg-white"
+                        />
+                      </div>
+                    ) : orderData?.createdAt ? (
+                      <Badge
+                        variant="outline"
+                        className="font-bold text-slate-700 bg-slate-50 border-slate-200"
+                      >
+                        {new Date(orderData?.createdAt).toLocaleDateString(
+                          "en-ca",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          },
+                        )}
+                      </Badge>
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
                     <User size={18} />
                   </div>
                   <div>
@@ -1431,39 +1478,6 @@ export default function OrderDetailsPage({
                       >
                         {orderData?.status}
                       </Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-100/50">
-                    <Calendar size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                      Order Date
-                    </p>
-                    {isEditMode ? (
-                      <div className="h-8">
-                        <DatePicker
-                          value={createdAt}
-                          setValue={(value) => {
-                            setCreatedAt(value);
-                          }}
-                        />
-                      </div>
-                    ) : orderData?.createdAt ? (
-                      <Badge
-                        variant="outline"
-                        className="font-bold text-slate-700 bg-slate-50 border-slate-200"
-                      >
-                        {new Date(orderData?.createdAt).toLocaleDateString(
-                          "en-ca",
-                          { year: "numeric", month: "short", day: "2-digit" },
-                        )}
-                      </Badge>
-                    ) : (
-                      <></>
                     )}
                   </div>
                 </div>
