@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import DatePicker from "@/components/ui/date-picker";
 import { useQuery } from "@tanstack/react-query";
-import { endOfMonth, format, startOfMonth } from "date-fns";
+import { addDays, endOfMonth, format, startOfMonth } from "date-fns";
 import {
   Banknote,
   CreditCard,
@@ -44,7 +44,7 @@ function FinancialReport() {
     startOfMonth(new Date()),
   );
   const [toDate, setToDate] = useState<Date | undefined>(
-    endOfMonth(new Date()),
+    addDays(endOfMonth(new Date()), 1),
   );
   const navigate = useNavigate();
 
@@ -333,134 +333,147 @@ function FinancialReport() {
           Daily Details Breakdown
         </h3>
         <div className="grid gap-4">
-          {reportData?.filter((daily) => daily.unpaid.totalAmount > 0 || daily.paymentMethods.reduce((acc, b) => acc + b.totalAmount, 0) > 0).map((daily, idx) => (
-            <Card
-              key={idx}
-              className="border-none shadow-md bg-white rounded-2xl overflow-hidden overflow-hidden"
-            >
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value={`item-${idx}`} className="border-none">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 transition-colors">
-                    <div className="flex flex-1 items-center justify-between text-left pr-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-blue-100 text-blue-700 p-2 rounded-xl font-bold flex flex-col items-center justify-center min-w-[60px]">
-                          <span className="text-xs uppercase opacity-70">
-                            {format(new Date(daily.date), "MMM")}
-                          </span>
-                          <span className="text-xl">
-                            {format(new Date(daily.date), "dd")}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900">
-                            {format(new Date(daily.date), "EEEE, yyyy")}
+          {reportData
+            ?.filter(
+              (daily) =>
+                daily.unpaid.totalAmount > 0 ||
+                daily.paymentMethods.reduce(
+                  (acc, b) => acc + b.totalAmount,
+                  0,
+                ) > 0,
+            )
+            .map((daily, idx) => (
+              <Card
+                key={idx}
+                className="border-none shadow-md bg-white rounded-2xl overflow-hidden overflow-hidden"
+              >
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value={`item-${idx}`} className="border-none">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 transition-colors">
+                      <div className="flex flex-1 items-center justify-between text-left pr-4">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-blue-100 text-blue-700 p-2 rounded-xl font-bold flex flex-col items-center justify-center min-w-[60px]">
+                            <span className="text-xs uppercase opacity-70">
+                              {format(new Date(daily.date), "MMM")}
+                            </span>
+                            <span className="text-xl">
+                              {format(new Date(daily.date), "dd")}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge
-                              variant="outline"
-                              className="bg-emerald-50 border-emerald-100 text-emerald-700 text-[10px] uppercase font-bold px-2 py-0"
-                            >
-                              Collected:{" "}
-                              {daily.paymentMethods
-                                .reduce((a, b) => a + b.totalAmount, 0)
-                                .toLocaleString()}{" "}
-                              Ks
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="bg-rose-50 border-rose-100 text-rose-700 text-[10px] uppercase font-bold px-2 py-0"
-                            >
-                              Debt: {daily.unpaid.totalAmount.toLocaleString()}{" "}
-                              Ks
-                            </Badge>
+                          <div>
+                            <div className="font-bold text-slate-900">
+                              {format(new Date(daily.date), "EEEE, yyyy")}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge
+                                variant="outline"
+                                className="bg-emerald-50 border-emerald-100 text-emerald-700 text-[10px] uppercase font-bold px-2 py-0"
+                              >
+                                Collected:{" "}
+                                {daily.paymentMethods
+                                  .reduce((a, b) => a + b.totalAmount, 0)
+                                  .toLocaleString()}{" "}
+                                Ks
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="bg-rose-50 border-rose-100 text-rose-700 text-[10px] uppercase font-bold px-2 py-0"
+                              >
+                                Debt:{" "}
+                                {daily.unpaid.totalAmount.toLocaleString()} Ks
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-50">
-                    <div className="grid lg:grid-cols-2 gap-8 mt-4">
-                      {/* Payments Section */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                          <Banknote className="h-4 w-4" /> Collections by Method
-                        </h4>
-                        <div className="space-y-3">
-                          {daily.paymentMethods.filter((pm) => pm.totalAmount > 0).map((pm, pmIdx) => (
-                            <div
-                              key={pmIdx}
-                              className="bg-slate-50 rounded-xl p-4 space-y-3"
-                            >
-                              <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
-                                <span className="font-bold text-slate-700">
-                                  {pm.methodName}
-                                </span>
-                                <span className="font-black text-emerald-600">
-                                  {pm.totalAmount.toLocaleString()} Ks
-                                </span>
-                              </div>
-                              <div className="space-y-1">
-                                {pm.orders.map((order, oIdx) => (
-                                  <div
-                                    key={oIdx}
-                                    className="flex items-center justify-between text-xs py-1"
-                                    onClick={() => {
-                                      navigate("/orders/" + order.id);
-                                    }}
-                                  >
-                                    <span className="text-slate-500">
-                                      {order.receiptNo || `#${order.id}`} -{" "}
-                                      {order.customerName || "Walk-in"}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-50">
+                      <div className="grid lg:grid-cols-2 gap-8 mt-4">
+                        {/* Payments Section */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <Banknote className="h-4 w-4" /> Collections by
+                            Method
+                          </h4>
+                          <div className="space-y-3">
+                            {daily.paymentMethods
+                              .filter((pm) => pm.totalAmount > 0)
+                              .map((pm, pmIdx) => (
+                                <div
+                                  key={pmIdx}
+                                  className="bg-slate-50 rounded-xl p-4 space-y-3"
+                                >
+                                  <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
+                                    <span className="font-bold text-slate-700">
+                                      {pm.methodName}
                                     </span>
-                                    <span className="font-semibold text-slate-700">
-                                      {order.amountAffected.toLocaleString()} Ks
+                                    <span className="font-black text-emerald-600">
+                                      {pm.totalAmount.toLocaleString()} Ks
                                     </span>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                                  <div className="space-y-1">
+                                    {pm.orders.map((order, oIdx) => (
+                                      <div
+                                        key={oIdx}
+                                        className="flex items-center justify-between text-xs py-1"
+                                        onClick={() => {
+                                          navigate("/orders/" + order.id);
+                                        }}
+                                      >
+                                        <span className="text-slate-500">
+                                          {order.receiptNo || `#${order.id}`} -{" "}
+                                          {order.customerName || "Walk-in"}
+                                        </span>
+                                        <span className="font-semibold text-slate-700">
+                                          {order.amountAffected.toLocaleString()}{" "}
+                                          Ks
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Unpaid Section */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" /> Unpaid (Debts)
-                        </h4>
-                        <div className="bg-rose-50/30 rounded-xl p-4 space-y-3 border border-rose-100/50">
-                          <div className="flex items-center justify-between border-b border-rose-200/50 pb-2">
-                            <span className="font-bold text-rose-700">
-                              Total Account Receivable
-                            </span>
-                            <span className="font-black text-rose-600">
-                              {daily.unpaid.totalAmount.toLocaleString()} Ks
-                            </span>
-                          </div>
-                          <div className="space-y-1">
-                            {daily.unpaid.orders.map((order, oIdx) => (
-                              <div
-                                key={oIdx}
-                                className="flex items-center justify-between text-xs py-1"
-                              >
-                                <span className="text-slate-500">
-                                  {order.receiptNo || `#${order.id}`} -{" "}
-                                  {order.customerName || "Walk-in"}
-                                </span>
-                                <span className="font-semibold text-rose-700">
-                                  {order.amountAffected.toLocaleString()} Ks
-                                </span>
-                              </div>
-                            ))}
+                        {/* Unpaid Section */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" /> Unpaid (Debts)
+                          </h4>
+                          <div className="bg-rose-50/30 rounded-xl p-4 space-y-3 border border-rose-100/50">
+                            <div className="flex items-center justify-between border-b border-rose-200/50 pb-2">
+                              <span className="font-bold text-rose-700">
+                                Total Account Receivable
+                              </span>
+                              <span className="font-black text-rose-600">
+                                {daily.unpaid.totalAmount.toLocaleString()} Ks
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {daily.unpaid.orders.map((order, oIdx) => (
+                                <div
+                                  key={oIdx}
+                                  className="flex items-center justify-between text-xs py-1"
+                                >
+                                  <span className="text-slate-500">
+                                    {order.receiptNo || `#${order.id}`} -{" "}
+                                    {order.customerName || "Walk-in"}
+                                  </span>
+                                  <span className="font-semibold text-rose-700">
+                                    {order.amountAffected.toLocaleString()} Ks
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </Card>
-          ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
+            ))}
         </div>
       </div>
     </div>
