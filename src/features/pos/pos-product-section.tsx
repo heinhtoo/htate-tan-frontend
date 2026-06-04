@@ -227,11 +227,10 @@ function POSProductSection({
                       : addToCart(product, 1, "Unit");
                   }}
                 >
-                  <div className="aspect-square bg-slate-50/50 flex items-center justify-center relative">
+                  <div className="aspect-square bg-slate-50/50 flex items-center justify-center relative overflow-hidden">
                     <img
                       src={product.imagePath}
-                      className="h-full w-full object-contain group-hover:scale-110 transition-transform duration-300"
-                      alt=""
+                      className="absolute inset-0 h-full w-full object-contain group-hover:scale-110 transition-transform duration-300"
                     />
                     <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
                       <Badge className="bg-white/80 text-slate-900 backdrop-blur-md border-none text-[9px] font-bold uppercase">
