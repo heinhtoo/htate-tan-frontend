@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useErrorStore } from "@/store/error.store";
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
@@ -363,6 +364,9 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                   <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 text-right">
                     Amount
                   </th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 text-right">
+                    Payment Amount
+                  </th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -434,6 +438,25 @@ export default function OrdersPage({ isCustomer }: { isCustomer: boolean }) {
                         <div className="text-[9px] text-slate-400 font-bold tracking-tighter uppercase">
                           {order.items.length}
                           units
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          {order.payments.map((payment) => (
+                            <span
+                              key={payment.id}
+                              className={cn(
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                payment.status === "PAID"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : payment.status === "PENDING"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-slate-100 text-slate-700",
+                              )}
+                            >
+                              {payment.amount.toLocaleString()} · {payment.type}
+                            </span>
+                          ))}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 text-right w-20">
