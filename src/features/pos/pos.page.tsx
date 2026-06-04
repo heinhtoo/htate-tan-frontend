@@ -417,7 +417,29 @@ const CartSection = ({
                   </div>
 
                   {/* Qty, Price, Total */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      onClick={() => {
+                        setNumpadConfig({
+                          open: true,
+                          title: "Bags",
+                          currentValue: item.subQty,
+                          onConfirm: (value: number) =>
+                            setCartItemSubQty(
+                              item.id,
+                              value,
+                              item.selectedUnitName,
+                            ),
+                          suffix: "bags",
+                        });
+                      }}
+                      className="px-2 py-1.5 bg-slate-50 hover:bg-primary/10 border border-slate-200 hover:border-primary/30 rounded transition-all"
+                    >
+                      <p className="text-[10px] text-slate-400 mb-0.5">Bags</p>
+                      <p className="text-xs font-bold text-slate-700">
+                        {item.subQty}
+                      </p>
+                    </button>
                     <button
                       onClick={() => {
                         setNumpadConfig({
@@ -978,6 +1000,7 @@ export default function PosPage({ isCustomer }: { isCustomer: boolean }) {
                 closeCart={() => {
                   setIsMobileCartOpen(false);
                 }}
+                setCartItemSubQty={setCartItemSubQty}
                 updateQty={updateCartQty}
                 removeFromCart={removeFromCart}
                 grandTotal={grandTotal}
