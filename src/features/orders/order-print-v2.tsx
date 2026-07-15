@@ -5,24 +5,47 @@ import headline from "./headline.png";
 import type { OrderResponse, PaymentResponse } from "./order.response";
 
 /**
- * Paginate by content line units (matches table line-height), not pixel guesses.
- * A short name (+ SKU) = 1 unit — same as the old "10 items per page".
- * Each extra wrapped name line costs +1 so that item pushes later rows to the next page.
+ * Paginate by estimated name wrap lines.
+ * Base row (1 name line + SKU) = 1 unit — calibrated so ~12 short items fill a page.
+ * Extra name wraps cost 0.5 each (SKU height is shared, so a 2-line name is ~1.5× not 2×).
+ * Wrapping prefers spaces (same as the browser) so long titles are not over-counted
+ * as ceil(chars/N), which left huge empty space under only 4 items.
  */
-const CHARS_PER_NAME_LINE = 30;
+const CHARS_PER_NAME_LINE = 20;
 const MAX_LINE_UNITS_PER_PAGE = {
   a5: 12,
   a4: 22,
 } as const;
+const EXTRA_NAME_LINE_COST = 0.5;
 
 function countNameLines(productName?: string) {
-  const name = (productName ?? "").trim();
-  if (!name) return 1;
-  return Math.max(1, Math.ceil(name.length / CHARS_PER_NAME_LINE));
+  const normalized = (productName ?? "").trim().replace(/\s+/g, " ");
+  if (!normalized) return 1;
+
+  let lines = 0;
+  let remaining = normalized;
+
+  while (remaining.length > 0) {
+    lines += 1;
+    const chars = Array.from(remaining);
+    if (chars.length <= CHARS_PER_NAME_LINE) break;
+
+    const windowStr = chars.slice(0, CHARS_PER_NAME_LINE).join("");
+    const lastSpace = windowStr.lastIndexOf(" ");
+    const take =
+      lastSpace > 0
+        ? Array.from(windowStr.slice(0, lastSpace)).length
+        : CHARS_PER_NAME_LINE;
+
+    remaining = chars.slice(take).join("").trimStart();
+  }
+
+  return Math.max(1, lines);
 }
 
 function getItemLineUnits(item: { productName?: string }) {
-  return countNameLines(item.productName);
+  const nameLines = countNameLines(item.productName);
+  return 1 + (nameLines - 1) * EXTRA_NAME_LINE_COST;
 }
 
 function paginateItemsByLines<T extends { productName?: string }>(
@@ -216,7 +239,9 @@ export const InvoicePrintV2 = forwardRef<
             </div>
 
             {/* --- Table Section --- */}
-            <div className="px-2 pt-1 z-10 grow min-h-0">
+            {/* overflow-hidden: if a row is still slightly over budget, clip into
+                the table area instead of painting over the footer terms. */}
+            <div className="px-2 pt-1 z-10 grow min-h-0 overflow-hidden">
               <table className="w-full text-[10px] border-b border-[#0f172a]">
                 <thead>
                   <tr className="bg-[#f1f5f9]">
@@ -232,10 +257,10 @@ export const InvoicePrintV2 = forwardRef<
                     <th className="border border-[#0f172a] py-0.5 w-12 text-center font-bold">
                       Qty
                     </th>
-                    <th className="border border-[#0f172a] py-0.5 w-16 text-right pr-1 font-bold">
+                    <th className="border border-[#0f172a] py-0.5 w-14 text-right pr-1 font-bold">
                       Price
                     </th>
-                    <th className="border border-[#0f172a] py-0.5 w-32 text-right pr-1 font-bold">
+                    <th className="border border-[#0f172a] py-0.5 w-20 text-right pr-1 font-bold">
                       Amount
                     </th>
                   </tr>
@@ -244,18 +269,19 @@ export const InvoicePrintV2 = forwardRef<
                   {pageItems.map((item, i) => (
                     <tr
                       key={i}
-                      className="min-h-7 border-b border-[#94a3b8] text-sm"
+                      className="border-b border-[#94a3b8] text-sm"
                     >
                       <td className="border-x border-[#0f172a] text-center align-top py-0.5">
                         {item.orderIndex}
                       </td>
-                      <td className="border-r border-[#0f172a] px-2 font-medium max-w-[220px] align-top py-0.5">
+                      <td className="border-r border-[#0f172a] px-1.5 font-medium align-top py-0.5">
                         <div>
-                          <p className="leading-[18px] break-words">
+                          {/* Myanmar glyphs need >1.2 line-height or they collide when wrapping */}
+                          <p className="leading-[20px] break-words">
                             {item.productName}
                           </p>
-                          <p className="text-[10px] text-gray-600 leading-[14px]">
-                            {item.productSKU && `[${item.productSKU}] `}
+                          <p className="text-[10px] text-gray-600 leading-[13px]">
+                            {item.productSKU && `[${item.productSKU}]`}
                           </p>
                         </div>
                       </td>
@@ -281,7 +307,7 @@ export const InvoicePrintV2 = forwardRef<
               </table>
             </div>
 
-            <div className="px-4 py-2 z-10 shrink-0 mt-auto">
+            <div className="relative px-4 py-2 z-20 shrink-0 mt-auto bg-white">
               <div className="flex justify-between items-start">
                 <div className="grow space-y-0.5 text-[8px] text-[#334155] font-medium leading-tight italic">
                   <p>• တရုတ် China ထီးပစ္စည်းများ အနာ လုံးဝ မလဲပေးပါ။</p>
