@@ -239,9 +239,8 @@ export const InvoicePrintV2 = forwardRef<
             </div>
 
             {/* --- Table Section --- */}
-            {/* overflow-hidden: if a row is still slightly over budget, clip into
-                the table area instead of painting over the footer terms. */}
-            <div className="px-2 pt-1 z-10 grow min-h-0 overflow-hidden">
+            {/* No grow/mt-auto: footer sits directly under the table (no gap). */}
+            <div className="px-2 pt-1 z-10 shrink-0">
               <table className="w-full text-[10px] border-b border-[#0f172a]">
                 <thead>
                   <tr className="bg-[#f1f5f9]">
@@ -307,7 +306,7 @@ export const InvoicePrintV2 = forwardRef<
               </table>
             </div>
 
-            <div className="relative px-4 py-2 z-20 shrink-0 mt-auto bg-white">
+            <div className="relative px-4 py-2 z-20 shrink-0 bg-white">
               <div className="flex justify-between items-start">
                 <div className="grow space-y-0.5 text-[8px] text-[#334155] font-medium leading-tight italic">
                   <p>• တရုတ် China ထီးပစ္စည်းများ အနာ လုံးဝ မလဲပေးပါ။</p>
