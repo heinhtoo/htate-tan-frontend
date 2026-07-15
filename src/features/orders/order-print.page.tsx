@@ -49,8 +49,10 @@ export default function OrderPrintPage() {
     enabled: !!customerId,
   });
 
-  const isA4 =
-    order?.response?.data?.items && order?.response?.data?.items.length > 10;
+  // Must match InvoicePrintV2 page size (w-[140mm] h-[200mm])
+  const PRINT_PAGE_WIDTH_MM = 140;
+  const PRINT_PAGE_HEIGHT_MM = 200;
+  const isA4 = false;
 
   const ordersList =
     customerData?.orders.map((o: any) => {
@@ -337,53 +339,77 @@ export default function OrderPrintPage() {
   const generatePDFBlob = async () => {
     if (!orderData || !printRef.current) return null;
 
-    // Scroll to top to ensure html2canvas captures correctly without offsets
+    // Scroll to top so html2canvas does not pick up viewport offsets
     window.scrollTo(0, 0);
+    // Wait for face loads so Myanmar fallback glyphs match the preview
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
 
     const element = printRef.current;
     const pages = element.querySelectorAll(".print-page");
     if (pages.length === 0) return null;
 
+    // Custom size must match the on-screen .print-page (not standard A5)
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: "a5",
+      format: [PRINT_PAGE_WIDTH_MM, PRINT_PAGE_HEIGHT_MM],
     });
-
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
 
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i] as HTMLElement;
+      const liveStyles = window.getComputedStyle(page);
+      const pageWidthPx = page.offsetWidth;
+      const pageHeightPx = page.offsetHeight;
 
-      // Render page to high-resolution canvas
       const canvas = await html2canvas(page, {
-        scale: 4,
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-        scrollY: 0, // Ensure no scroll offset
-        onclone: (clonedDoc) => {
+        // Capture exact laid-out size — do not reflow via mm overrides
+        width: pageWidthPx,
+        height: pageHeightPx,
+        windowWidth: pageWidthPx,
+        windowHeight: pageHeightPx,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
+        onclone: (clonedDoc, clonedNode) => {
           const container = clonedDoc.getElementById("print-container");
           if (container) {
             container.style.transform = "none";
           }
+
+          const clonedPage = clonedNode as HTMLElement;
+          // Lock to the live pixel size so column widths (and wrap) match preview
+          clonedPage.style.width = `${pageWidthPx}px`;
+          clonedPage.style.height = `${pageHeightPx}px`;
+          clonedPage.style.maxWidth = `${pageWidthPx}px`;
+          clonedPage.style.maxHeight = `${pageHeightPx}px`;
+          clonedPage.style.overflow = "hidden";
+          clonedPage.style.transform = "none";
+          clonedPage.style.boxSizing = "border-box";
+          clonedPage.style.fontFamily = liveStyles.fontFamily;
+          clonedPage.style.letterSpacing = liveStyles.letterSpacing;
+          clonedPage.style.fontSize = liveStyles.fontSize;
+          clonedPage.style.lineHeight = liveStyles.lineHeight;
         },
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      // PNG keeps Burmese strokes sharper than JPEG
+      const imgData = canvas.toDataURL("image/png");
 
-      // Calculate image height to maintain aspect ratio
-      const imgProps = doc.getImageProperties(imgData);
-      const imgWidth = pdfWidth;
-      let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+      if (i > 0) doc.addPage([PRINT_PAGE_WIDTH_MM, PRINT_PAGE_HEIGHT_MM]);
 
-      // Cap image height to pdfHeight to prevent vertical clipping
-      if (imgHeight > pdfHeight) {
-        imgHeight = pdfHeight;
-      }
-      if (i > 0) doc.addPage();
-      doc.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+      doc.addImage(
+        imgData,
+        "PNG",
+        0,
+        0,
+        PRINT_PAGE_WIDTH_MM,
+        PRINT_PAGE_HEIGHT_MM,
+      );
     }
 
     return doc.output("blob");
@@ -512,7 +538,11 @@ export default function OrderPrintPage() {
 
         {/* The Actual Preview Component */}
         <div className="flex justify-center bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-4 md:p-8 min-h-[600px] ring-1 ring-slate-100">
-          <div ref={printRef} className="transform scale-100 origin-top">
+          <div
+            id="print-container"
+            ref={printRef}
+            className="origin-top"
+          >
             <InvoicePrintV2
               orderData={orderData}
               watchedItems={orderData.items.sort(

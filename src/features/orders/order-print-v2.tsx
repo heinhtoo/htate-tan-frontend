@@ -1,8 +1,59 @@
 /* eslint-disable no-irregular-whitespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 import headline from "./headline.png";
 import type { OrderResponse, PaymentResponse } from "./order.response";
+
+/**
+ * Paginate by content line units (matches table line-height), not pixel guesses.
+ * A short name (+ SKU) = 1 unit — same as the old "10 items per page".
+ * Each extra wrapped name line costs +1 so that item pushes later rows to the next page.
+ */
+const CHARS_PER_NAME_LINE = 30;
+const MAX_LINE_UNITS_PER_PAGE = {
+  a5: 12,
+  a4: 22,
+} as const;
+
+function countNameLines(productName?: string) {
+  const name = (productName ?? "").trim();
+  if (!name) return 1;
+  return Math.max(1, Math.ceil(name.length / CHARS_PER_NAME_LINE));
+}
+
+function getItemLineUnits(item: { productName?: string }) {
+  return countNameLines(item.productName);
+}
+
+function paginateItemsByLines<T extends { productName?: string }>(
+  items: T[],
+  maxLineUnits: number,
+): T[][] {
+  const pages: T[][] = [];
+  let current: T[] = [];
+  let usedLines = 0;
+
+  for (const item of items) {
+    const lines = getItemLineUnits(item);
+    const wouldOverflow =
+      current.length > 0 && usedLines + lines > maxLineUnits;
+
+    if (wouldOverflow) {
+      pages.push(current);
+      current = [];
+      usedLines = 0;
+    }
+
+    current.push(item);
+    usedLines += lines;
+  }
+
+  if (current.length > 0 || pages.length === 0) {
+    pages.push(current);
+  }
+
+  return pages;
+}
 
 export const InvoicePrintV2 = forwardRef<
   HTMLDivElement,
@@ -37,15 +88,15 @@ export const InvoicePrintV2 = forwardRef<
         ? "Mixed"
         : completedPayments[0]?.type || "Credit";
 
-    // Reduced items per page slightly to accommodate increased row height
-    const pages = [];
-
     const isA4 = false;
-    const ITEMS_PER_PAGE = isA4 ? 20 : 10;
-    for (let i = 0; i < watchedItems.length; i += ITEMS_PER_PAGE) {
-      pages.push(watchedItems.slice(i, i + ITEMS_PER_PAGE));
-    }
-    if (pages.length === 0) pages.push([]);
+    const pages = useMemo(
+      () =>
+        paginateItemsByLines(
+          watchedItems,
+          isA4 ? MAX_LINE_UNITS_PER_PAGE.a4 : MAX_LINE_UNITS_PER_PAGE.a5,
+        ),
+      [watchedItems, isA4],
+    );
 
     const debtAmount = showDebt ? totalDebt : 0;
 
@@ -67,10 +118,16 @@ export const InvoicePrintV2 = forwardRef<
         {pages.map((pageItems, pageIndex) => (
           <div
             key={pageIndex}
-            className={`print-page bg-white text-[#0f172a] flex flex-col antialiased shrink-0 relative ${
+            className={`print-page bg-white text-[#0f172a] flex flex-col antialiased shrink-0 relative overflow-hidden ${
               isA4 ? "w-[210mm] h-[297mm]" : "w-[140mm] h-[200mm]"
             }`}
-            style={{ boxSizing: "border-box" }}
+            style={{
+              boxSizing: "border-box",
+              // Product Sans has no Myanmar glyphs — pin the same fallback the browser
+              // uses so html2canvas wraps text identically to the web preview.
+              fontFamily:
+                '"Product Sans", "Myanmar Text", "Noto Sans Myanmar", "Pyidaungsu", sans-serif',
+            }}
           >
             {/* --- WATERMARK --- */}
             <div className="absolute left-0 bottom-0 top-32 right-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none">
@@ -80,7 +137,7 @@ export const InvoicePrintV2 = forwardRef<
             </div>
 
             {/* --- COMPACT HEADER --- */}
-            <div className="p-3 pt-4 text-center relative z-10">
+            <div className="p-3 pt-4 text-center relative z-10 shrink-0">
               <div className="flex flex-row items-center justify-center mb-1">
                 <img src={headline} className="h-[120px] object-contain" />
               </div>
@@ -109,7 +166,7 @@ export const InvoicePrintV2 = forwardRef<
             </div>
 
             {/* --- COMPACT METADATA GRID --- */}
-            <div className="px-4 grid grid-cols-2 text-[10px] border-y border-[#0f172a] bg-[#f8fafc] z-10">
+            <div className="px-4 grid grid-cols-2 text-[10px] border-y border-[#0f172a] bg-[#f8fafc] z-10 shrink-0">
               <div className="space-y-1 pr-2">
                 <div className="flex flex-row items-start">
                   <span className="w-14 shrink-0 font-bold text-[#64748b] text-[8px]">
@@ -158,8 +215,8 @@ export const InvoicePrintV2 = forwardRef<
               </div>
             </div>
 
-            {/* --- Table Section (Reduced height) --- */}
-            <div className="px-2 pt-1 z-10">
+            {/* --- Table Section --- */}
+            <div className="px-2 pt-1 z-10 grow min-h-0">
               <table className="w-full text-[10px] border-b border-[#0f172a]">
                 <thead>
                   <tr className="bg-[#f1f5f9]">
@@ -187,29 +244,31 @@ export const InvoicePrintV2 = forwardRef<
                   {pageItems.map((item, i) => (
                     <tr
                       key={i}
-                      className="h-7 border-b border-[#94a3b8] text-sm"
+                      className="min-h-7 border-b border-[#94a3b8] text-sm"
                     >
-                      <td className="border-x border-[#0f172a] text-center">
+                      <td className="border-x border-[#0f172a] text-center align-top py-0.5">
                         {item.orderIndex}
                       </td>
-                      <td className="border-r border-[#0f172a] px-2 font-medium  max-w-[220px]">
+                      <td className="border-r border-[#0f172a] px-2 font-medium max-w-[220px] align-top py-0.5">
                         <div>
-                          <p>{item.productName}</p>
-                          <p className="text-[10px] text-gray-600">
+                          <p className="leading-[18px] break-words">
+                            {item.productName}
+                          </p>
+                          <p className="text-[10px] text-gray-600 leading-[14px]">
                             {item.productSKU && `[${item.productSKU}] `}
                           </p>
                         </div>
                       </td>
-                      <td className="border-r border-[#0f172a] text-center font-bold">
+                      <td className="border-r border-[#0f172a] text-center font-bold align-top py-0.5">
                         {item.subQuantity}
                       </td>
-                      <td className="border-r border-[#0f172a] text-center font-bold">
+                      <td className="border-r border-[#0f172a] text-center font-bold align-top py-0.5">
                         {item.quantity}
                       </td>
-                      <td className="border-r border-[#0f172a] text-right pr-1">
+                      <td className="border-r border-[#0f172a] text-right pr-1 align-top py-0.5">
                         {parseFloat(item.unitPrice + "").toLocaleString()}
                       </td>
-                      <td className="border-r border-[#0f172a] text-right pr-1 font-bold">
+                      <td className="border-r border-[#0f172a] text-right pr-1 font-bold align-top py-0.5">
                         {(
                           item.quantity *
                           item.subQuantity *
@@ -218,23 +277,11 @@ export const InvoicePrintV2 = forwardRef<
                       </td>
                     </tr>
                   ))}
-                  {/* Empty row filler to keep table height consistent */}
-                  {/* {Array.from({
-                    length: Math.max(0, ITEMS_PER_PAGE - pageItems.length),
-                  }).map((_, i) => (
-                    <tr key={i} className="h-7 border-b border-[#f1f5f9]">
-                      <td className="border-x border-[#0f172a]"></td>
-                      <td className="border-r border-[#0f172a]"></td>
-                      <td className="border-r border-[#0f172a]"></td>
-                      <td className="border-r border-[#0f172a]"></td>
-                      <td className="border-r border-[#0f172a]"></td>
-                    </tr>
-                  ))} */}
                 </tbody>
               </table>
             </div>
 
-            <div className="px-4 py-2 z-10">
+            <div className="px-4 py-2 z-10 shrink-0 mt-auto">
               <div className="flex justify-between items-start">
                 <div className="grow space-y-0.5 text-[8px] text-[#334155] font-medium leading-tight italic">
                   <p>• တရုတ် China ထီးပစ္စည်းများ အနာ လုံးဝ မလဲပေးပါ။</p>
